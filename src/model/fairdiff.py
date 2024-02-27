@@ -1,4 +1,5 @@
 from model.digress.diffusion_model_discrete import DiscreteDenoisingDiffusion
+from torch_geometric.datasets import Planetoid
 
 
 class FairDiff:
@@ -10,4 +11,3 @@ class FairDiff:
 
     def generate():
         return None
-    
