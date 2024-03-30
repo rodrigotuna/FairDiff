@@ -1,4 +1,6 @@
 __pycache__
-data/Cora
-data/processed
-data/raw
+data
+checkpoints
+generated_subgraphs
+outputs
+wandb

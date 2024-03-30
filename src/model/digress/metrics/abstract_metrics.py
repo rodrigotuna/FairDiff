@@ -103,6 +103,29 @@ class CrossEntropyMetric(Metric):
 
     def compute(self):
         return self.total_ce / self.total_samples
+    
+class FocalLossMetric(Metric):
+    def __init__(self):
+        super().__init__()
+        self.add_state('total_fl', default=torch.tensor(0.), dist_reduce_fx="sum")
+        self.add_state('total_samples', default=torch.tensor(0.), dist_reduce_fx="sum")
+
+    def update(self, preds: Tensor, target: Tensor) -> None:
+        """ Update state with predictions and targets.
+            preds: Predictions from model   (bs * n, d) or (bs * n * n, d)
+            target: Ground truth values     (bs * n, d) or (bs * n * n, d). """
+        target = torch.argmax(target, dim=-1)
+        ce_loss = F.cross_entropy(preds, target, reduction='none')
+        p = F.softmax(preds, dim=1)
+        n = target.shape[0]
+        p_t = p[torch.arange(n), target]
+        output = ce_loss * ((1 - p_t) ** 2)
+
+        self.total_fl += output.sum()
+        self.total_samples += preds.size(0)
+
+    def compute(self):
+        return self.total_fl / self.total_samples
 
 
 class ProbabilityMetric(Metric):
