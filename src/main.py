@@ -12,7 +12,6 @@ from pytorch_lightning import Trainer
 from model.digress.metrics.abstract_metrics import TrainAbstractMetricsDiscrete
 import networkx as nx
 import numpy as np
-import powerlaw
 import matplotlib.pyplot as plt
 
 @hydra.main(version_base='1.3', config_path='../configs', config_name='config')
