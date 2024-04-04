@@ -38,7 +38,7 @@ def main(cfg: DictConfig):
         'domain_features':     domain_features
 
     }
-
+    
     model = DiscreteDenoisingDiffusion(cfg, **model_kwargs)
     
     callbacks = []

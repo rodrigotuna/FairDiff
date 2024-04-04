@@ -19,10 +19,12 @@ class SampledDataset(LightningDataset):
             self.graph = Planetoid("../data","Cora").get(0)
             self.sensitive_attribute = self.graph.y
         elif self.dataset == "NBA":
-
+            #I think i need to download this
             pass
         elif self.dataset == "Facebook":
             self.graph = SNAPDataset("../data", 'ego-facebook').get(1)
+            print(self.graph.x[1][77])
+            print(self.graph.x[1][78])
 
         elif self.dataset == "Oklahoma97":
             pass

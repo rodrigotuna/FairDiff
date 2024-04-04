@@ -264,7 +264,7 @@ class DiscreteDenoisingDiffusion(pl.LightningModule):
         while samples_left_to_generate > 0:
             self.print(f'Samples left to generate: {samples_left_to_generate}/'
                        f'{self.cfg.general.final_model_samples_to_generate}', end='', flush=True)
-            bs = 2
+            bs = 3
             to_generate = min(samples_left_to_generate, bs)
             to_save = min(samples_left_to_save, bs)
             chains_save = min(chains_left_to_save, bs)
@@ -275,11 +275,11 @@ class DiscreteDenoisingDiffusion(pl.LightningModule):
             samples_left_to_generate -= to_generate
             chains_left_to_save -= chains_save
         self.print("Saving the generated graphs")
-        filename = f'generated_samples1.txt'
+        filename = f'generated_subgraphs/generated_samples1.txt'
         G = nx.Graph()
         for i in range(2, 50):
             if os.path.exists(filename):
-                filename = f'generated_samples{i}.txt'
+                filename = f'generated_subgraphs/generated_samples{i}.txt'
             else:
                 break
         with open("generated_subgraphs/" + filename, 'w') as f:
@@ -506,7 +506,6 @@ class DiscreteDenoisingDiffusion(pl.LightningModule):
         """
         if num_nodes is None:
             n_nodes = self.node_dist.sample_n(batch_size, self.device)
-            print(n_nodes)
         elif type(num_nodes) == int:
             n_nodes = num_nodes * torch.ones(batch_size, device=self.device, dtype=torch.int)
         else:
@@ -522,11 +521,11 @@ class DiscreteDenoisingDiffusion(pl.LightningModule):
 
         assert (E == torch.transpose(E, 1, 2)).all()
         assert number_chain_steps < self.T
-        chain_X_size = torch.Size((number_chain_steps, keep_chain, X.size(1)))
-        chain_E_size = torch.Size((number_chain_steps, keep_chain, E.size(1), E.size(2)))
+        #chain_X_size = torch.Size((number_chain_steps, keep_chain, X.size(1)))
+        #chain_E_size = torch.Size((number_chain_steps, keep_chain, E.size(1), E.size(2)))
 
-        chain_X = torch.zeros(chain_X_size)
-        chain_E = torch.zeros(chain_E_size)
+        #chain_X = torch.zeros(chain_X_size)
+        #chain_E = torch.zeros(chain_E_size)
         # Iteratively sample p(z_s | z_t) for t = 1, ..., T, with s = t - 1.
         for s_int in reversed(range(0, self.T)):
             s_array = s_int * torch.ones((batch_size, 1)).type_as(y)
@@ -538,10 +537,10 @@ class DiscreteDenoisingDiffusion(pl.LightningModule):
             sampled_s, discrete_sampled_s = self.sample_p_zs_given_zt(s_norm, t_norm, X, E, y, node_mask)
             X, E, y = sampled_s.X, sampled_s.E, sampled_s.y
 
-            # Save the first keep_chain graphs
-            write_index = (s_int * number_chain_steps) // self.T
-            chain_X[write_index] = discrete_sampled_s.X[:keep_chain]
-            chain_E[write_index] = discrete_sampled_s.E[:keep_chain]
+            # # Save the first keep_chain graphs
+            # write_index = (s_int * number_chain_steps) // self.T
+            # chain_X[write_index] = discrete_sampled_s.X[:keep_chain]
+            # chain_E[write_index] = discrete_sampled_s.E[:keep_chain]
 
         # Sample
         sampled_s = sampled_s.mask(node_mask, collapse=True)
@@ -573,20 +572,20 @@ class DiscreteDenoisingDiffusion(pl.LightningModule):
 
         # Visualize chains
         if self.visualization_tools is not None:
-            self.print('Visualizing chains...')
-            current_path = os.getcwd()
-            num_molecules = chain_X.size(1)       # number of molecules
-            for i in range(num_molecules):
-                result_path = os.path.join(current_path, f'chains/{self.cfg.general.name}/'
-                                                         f'epoch{self.current_epoch}/'
-                                                         f'chains/molecule_{batch_id + i}')
-                if not os.path.exists(result_path):
-                    os.makedirs(result_path)
-                    _ = self.visualization_tools.visualize_chain(result_path,
-                                                                 chain_X[:, i, :].numpy(),
-                                                                 chain_E[:, i, :].numpy())
-                self.print('\r{}/{} complete'.format(i+1, num_molecules), end='', flush=True)
-            self.print('\nVisualizing molecules...')
+            # self.print('Visualizing chains...')
+            # current_path = os.getcwd()
+            # num_molecules = chain_X.size(1)       # number of molecules
+            # for i in range(num_molecules):
+            #     result_path = os.path.join(current_path, f'chains/{self.cfg.general.name}/'
+            #                                              f'epoch{self.current_epoch}/'
+            #                                              f'chains/molecule_{batch_id + i}')
+            #     if not os.path.exists(result_path):
+            #         os.makedirs(result_path)
+            #         _ = self.visualization_tools.visualize_chain(result_path,
+            #                                                      chain_X[:, i, :].numpy(),
+            #                                                      chain_E[:, i, :].numpy())
+            #     self.print('\r{}/{} complete'.format(i+1, num_molecules), end='', flush=True)
+            # self.print('\nVisualizing molecules...')
 
             # Visualize the final molecules
             current_path = os.getcwd()

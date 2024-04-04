@@ -6,6 +6,7 @@ import powerlaw
 
 REAL_GRAPH = 'cora.pickle'
 GRAPHS = ['1000_ts_1000_gs.pickle', '1000_ts_2000_gs.pickle', '2000_ts_1000_gs.pickle', '2000_ts_2000_gs.pickle']
+FOCAL = ['1000_ts_1000_gs_focal.pickle', '1000_ts_2000_gs_focal.pickle']
 
 def read_graph(file):
     G = pickle.load(open(file, 'rb'))
@@ -29,7 +30,7 @@ def create_graph(file, num_samples):
                         G.add_edge(nodes[i], nodes[j])
 
             s = f.readline()
-    pickle.dump(G, open(f'2000_ts_{num_samples}_gs.pickle', 'wb'))
+    pickle.dump(G, open(f'1000_ts_{num_samples}_gs_focal.pickle', 'wb'))
     return G
 
 def eval(G):
@@ -68,7 +69,8 @@ def IoU(G_gen, G_real):
 
 
 G_real = read_graph(REAL_GRAPH)
-for graph in GRAPHS:
+for graph in FOCAL:
     print(graph)
     G = read_graph(graph)
+    eval(G)
     print(IoU(G, G_real))
