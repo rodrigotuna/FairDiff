@@ -19,12 +19,17 @@ class SampledDataset(LightningDataset):
             self.graph = Planetoid("../data","Cora").get(0)
             self.sensitive_attribute = self.graph.y
         elif self.dataset == "NBA":
-            #I think i need to download this
+            url = 'https://github.com/LavinWong/Graph-Fairness-Data/tree/main/NBA'
+            files = ['nba.csv', 'nba_relationship.txt']
+            
+
             pass
         elif self.dataset == "Facebook":
+            #1045 nodes 
             self.graph = SNAPDataset("../data", 'ego-facebook').get(1)
-            print(self.graph.x[1][77])
-            print(self.graph.x[1][78])
+            #Male-Female indexes 666,667
+            self.sensitive_attribute = self.graph.x[:,666].detach().clone()
+            self.sensitive_attribute[torch.logical_and(self.graph.x[:,666] == 0, self.graph.x[:,667] == 0)] = 2
 
         elif self.dataset == "Oklahoma97":
             pass

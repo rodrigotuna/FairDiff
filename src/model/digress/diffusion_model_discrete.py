@@ -282,7 +282,7 @@ class DiscreteDenoisingDiffusion(pl.LightningModule):
                 filename = f'generated_subgraphs/generated_samples{i}.txt'
             else:
                 break
-        with open("generated_subgraphs/" + filename, 'w') as f:
+        with open(filename, 'w') as f:
             for item in samples:
                 f.write(f"N={item[0].shape[0]}\n")
                 atoms = item[0].tolist()

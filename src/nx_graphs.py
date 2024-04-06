@@ -68,9 +68,21 @@ def IoU(G_gen, G_real):
 
 
 
-G_real = read_graph(REAL_GRAPH)
-for graph in FOCAL:
-    print(graph)
-    G = read_graph(graph)
-    eval(G)
-    print(IoU(G, G_real))
+# G_real = read_graph(REAL_GRAPH)
+# for graph in FOCAL:
+#     print(graph)
+#     G = read_graph(graph)
+#     eval(G)
+#     print(IoU(G, G_real))
+
+import pandas as pd
+
+x = pd.read_csv('../data/ego-facebook/raw/facebook/107.feat', sep=' ', header=None, dtype=np.float32)
+print(x.shape)
+print(x[265].values.shape)
+print(x[266].values.shape)
+tot = (x[265].values + x[266].values)
+print(tot.shape)
+print(tot.sum())
+index = tot[tot == 2]
+print(index)
