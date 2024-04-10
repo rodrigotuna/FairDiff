@@ -35,7 +35,6 @@ class SampledDataset(LightningDataset):
 
         self.G = to_networkx(self.graph)
         self.G = self.G.to_undirected()
-        print(self.G[163])
         sampled_graphs = [list(set(sampler.sample(self.G, 50))) for i in range(n_samples)]
 
         sampled_graphs_dict = [dict(zip(sample,range(len(sample)))) for sample in sampled_graphs]

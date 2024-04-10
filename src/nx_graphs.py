@@ -7,6 +7,7 @@ import powerlaw
 REAL_GRAPH = 'cora.pickle'
 GRAPHS = ['1000_ts_1000_gs.pickle', '1000_ts_2000_gs.pickle', '2000_ts_1000_gs.pickle', '2000_ts_2000_gs.pickle']
 FOCAL = ['1000_ts_1000_gs_focal.pickle', '1000_ts_2000_gs_focal.pickle']
+FIFTY = ['1000(50)_ts_1000_gs.pickle', '1000(50)_ts_2000_gs.pickle']
 
 def read_graph(file):
     G = pickle.load(open(file, 'rb'))
@@ -30,12 +31,14 @@ def create_graph(file, num_samples):
                         G.add_edge(nodes[i], nodes[j])
 
             s = f.readline()
-    pickle.dump(G, open(f'1000_ts_{num_samples}_gs_focal.pickle', 'wb'))
+    pickle.dump(G, open(f'1000(50)_ts_{num_samples}_gs.pickle', 'wb'))
     return G
 
 def eval(G):
+    print(G)
     degrees = list(dict(G.degree()).values())
-    print("Avg degree: ", sum(degrees)/len(degrees))
+    avg_deg = sum(degrees)/len(degrees)
+    print("Avg degree: ", avg_deg)
     triangles = nx.triangles(G)
     print("Triangles: ", sum(triangles.values())/3)
     scc = nx.connected_components(G)
@@ -49,7 +52,6 @@ def eval(G):
     avg_deg_diff = np.abs(np.subtract.outer(degrees, degrees)).mean()
     gini = avg_deg_diff / (np.mean(degrees)*2)
     print("Gini coefficient", gini)
-    print(G)
 
 def IoU(G_gen, G_real):
     union = G_real.number_of_edges()
@@ -62,27 +64,15 @@ def IoU(G_gen, G_real):
             union += 1
     return intersection/union
 
+# create_graph("generated_subgraphs/generated_samples16.txt", 1000)
+# create_graph("generated_subgraphs/generated_samples16.txt", 2000)
 
 
 
+G_real = read_graph(REAL_GRAPH)
+for graph in FIFTY + FOCAL:
+    print(graph)
+    G = read_graph(graph)
+    eval(G)
+    print(IoU(G, G_real))
 
-
-
-# G_real = read_graph(REAL_GRAPH)
-# for graph in FOCAL:
-#     print(graph)
-#     G = read_graph(graph)
-#     eval(G)
-#     print(IoU(G, G_real))
-
-import pandas as pd
-
-x = pd.read_csv('../data/ego-facebook/raw/facebook/107.feat', sep=' ', header=None, dtype=np.float32)
-print(x.shape)
-print(x[265].values.shape)
-print(x[266].values.shape)
-tot = (x[265].values + x[266].values)
-print(tot.shape)
-print(tot.sum())
-index = tot[tot == 2]
-print(index)
