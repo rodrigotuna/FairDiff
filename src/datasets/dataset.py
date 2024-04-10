@@ -6,8 +6,7 @@ from torch_geometric.datasets import Planetoid, SNAPDataset
 from torch_geometric.utils import subgraph, to_networkx
 from datasets.abstract_dataset import AbstractDatasetInfos, AbstractDataModule
 from datasets.fair_rw import FairRW
-import networkx as nx
-import numpy as np
+from datasets.custom_datasets import NBADataset
 
 class SampledDataset(LightningDataset):
     def __init__(self, dataset, sampler, n_samples):
@@ -19,11 +18,9 @@ class SampledDataset(LightningDataset):
             self.graph = Planetoid("../data","Cora").get(0)
             self.sensitive_attribute = self.graph.y
         elif self.dataset == "NBA":
-            url = 'https://github.com/LavinWong/Graph-Fairness-Data/tree/main/NBA'
-            files = ['nba.csv', 'nba_relationship.txt']
-            
-
-            pass
+            self.graph = NBADataset("../data").get(0)
+            #Country index 36
+            self.sensitive_attribute = self.graph.x[:,36]
         elif self.dataset == "Facebook":
             #1045 nodes 
             self.graph = SNAPDataset("../data", 'ego-facebook').get(1)
@@ -36,7 +33,9 @@ class SampledDataset(LightningDataset):
         elif self.dataset == "UNC28":
             pass
 
-        self.G = to_networkx(self.graph, to_undirected=True)
+        self.G = to_networkx(self.graph)
+        self.G = self.G.to_undirected()
+        print(self.G[163])
         sampled_graphs = [list(set(sampler.sample(self.G, 50))) for i in range(n_samples)]
 
         sampled_graphs_dict = [dict(zip(sample,range(len(sample)))) for sample in sampled_graphs]

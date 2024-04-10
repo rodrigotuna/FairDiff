@@ -8,7 +8,9 @@ class FairRW:
             G_ = G.subgraph(nodes_with_degree_k)
         else:
             G_ = G
-        node = random.randint(0, G_.number_of_nodes())
+        node = None
+        while node is None or not G[node]:
+            node = random.randint(0, G_.number_of_nodes())
         sampled_nodes = []
         for i in range(length):
             sampled_nodes.append(node)
