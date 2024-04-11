@@ -264,7 +264,7 @@ class DiscreteDenoisingDiffusion(pl.LightningModule):
         while samples_left_to_generate > 0:
             self.print(f'Samples left to generate: {samples_left_to_generate}/'
                        f'{self.cfg.general.final_model_samples_to_generate}', end='', flush=True)
-            bs = 2
+            bs = 4
             to_generate = min(samples_left_to_generate, bs)
             to_save = min(samples_left_to_save, bs)
             chains_save = min(chains_left_to_save, bs)
@@ -521,11 +521,11 @@ class DiscreteDenoisingDiffusion(pl.LightningModule):
 
         assert (E == torch.transpose(E, 1, 2)).all()
         assert number_chain_steps < self.T
-        #chain_X_size = torch.Size((number_chain_steps, keep_chain, X.size(1)))
-        #chain_E_size = torch.Size((number_chain_steps, keep_chain, E.size(1), E.size(2)))
+        chain_X_size = torch.Size((number_chain_steps, keep_chain, X.size(1)))
+        chain_E_size = torch.Size((number_chain_steps, keep_chain, E.size(1), E.size(2)))
 
-        #chain_X = torch.zeros(chain_X_size)
-        #chain_E = torch.zeros(chain_E_size)
+        chain_X = torch.zeros(chain_X_size)
+        chain_E = torch.zeros(chain_E_size)
         # Iteratively sample p(z_s | z_t) for t = 1, ..., T, with s = t - 1.
         for s_int in reversed(range(0, self.T)):
             s_array = s_int * torch.ones((batch_size, 1)).type_as(y)
@@ -538,9 +538,9 @@ class DiscreteDenoisingDiffusion(pl.LightningModule):
             X, E, y = sampled_s.X, sampled_s.E, sampled_s.y
 
             # # Save the first keep_chain graphs
-            # write_index = (s_int * number_chain_steps) // self.T
-            # chain_X[write_index] = discrete_sampled_s.X[:keep_chain]
-            # chain_E[write_index] = discrete_sampled_s.E[:keep_chain]
+            write_index = (s_int * number_chain_steps) // self.T
+            chain_X[write_index] = discrete_sampled_s.X[:keep_chain]
+            chain_E[write_index] = discrete_sampled_s.E[:keep_chain]
 
         # Sample
         sampled_s = sampled_s.mask(node_mask, collapse=True)

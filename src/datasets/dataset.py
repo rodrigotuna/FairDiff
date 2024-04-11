@@ -35,7 +35,7 @@ class SampledDataset(LightningDataset):
 
         self.G = to_networkx(self.graph)
         self.G = self.G.to_undirected()
-        sampled_graphs = [list(set(sampler.sample(self.G, 50))) for i in range(n_samples)]
+        sampled_graphs = [list(set(sampler.sample(self.G, 20))) for i in range(n_samples)]
 
         sampled_graphs_dict = [dict(zip(sample,range(len(sample)))) for sample in sampled_graphs]
         sampled_edge_index = [subgraph(sample, self.graph.edge_index)[0].apply_(lambda x : sampled_graphs_dict[idx][x]) for idx, sample in enumerate(sampled_graphs)]
@@ -52,7 +52,7 @@ class SampledDataset(LightningDataset):
 
 class SampledDataModule(AbstractDataModule):
     def __init__(self, cfg):
-        datasets = {'train': SampledDataset(cfg.dataset.name, FairRW(), 500),
+        datasets = {'train': SampledDataset(cfg.dataset.name, FairRW(), 1000),
                     'val': SampledDataset(cfg.dataset.name, FairRW(), 100),
                     'test': SampledDataset(cfg.dataset.name, FairRW(), 100)}
         self.datasets = datasets
