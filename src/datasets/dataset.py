@@ -6,7 +6,7 @@ from torch_geometric.datasets import Planetoid, SNAPDataset
 from torch_geometric.utils import subgraph, to_networkx
 from datasets.abstract_dataset import AbstractDatasetInfos, AbstractDataModule
 from datasets.fair_rw import FairRW
-from datasets.custom_datasets import NBADataset
+from datasets.custom_datasets import NBADataset, CollegiateSocNet
 
 class SampledDataset(LightningDataset):
     def __init__(self, dataset, sampler, n_samples):
@@ -19,6 +19,7 @@ class SampledDataset(LightningDataset):
             self.sensitive_attribute = self.graph.y
         elif self.dataset == "NBA":
             self.graph = NBADataset("../data").get(0)
+            print(self.graph)
             #Country index 36
             self.sensitive_attribute = self.graph.x[:,36]
         elif self.dataset == "Facebook":
@@ -29,9 +30,9 @@ class SampledDataset(LightningDataset):
             self.sensitive_attribute[torch.logical_and(self.graph.x[:,666] == 0, self.graph.x[:,667] == 0)] = 2
 
         elif self.dataset == "Oklahoma97":
-            pass
+            self.graph = CollegiateSocNet("../data", "oklahoma97").get(0)
         elif self.dataset == "UNC28":
-            pass
+            self.graph = CollegiateSocNet("../data", "unc28").get(0)
 
         self.G = to_networkx(self.graph)
         self.G = self.G.to_undirected()
