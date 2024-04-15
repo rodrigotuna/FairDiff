@@ -3,40 +3,60 @@ from torch_geometric.data import Data
 import torch.nn.functional as F
 from torch_geometric.data.lightning import LightningDataset
 from torch_geometric.datasets import Planetoid, SNAPDataset
-from torch_geometric.utils import subgraph, to_networkx
+from torch_geometric.utils import subgraph, to_networkx, coalesce
 from datasets.abstract_dataset import AbstractDatasetInfos, AbstractDataModule
 from datasets.fair_rw import FairRW
 from datasets.custom_datasets import NBADataset, CollegiateSocNet
+import numpy as np
+import numpy.random as random
 
 class SampledDataset(LightningDataset):
-    def __init__(self, dataset, sampler, n_samples):
-        self.dataset = dataset
+    def __init__(self, cfg, sampler, n_samples):
         self.data = []
         #qm9 = QM9("../data")
 
-        if self.dataset == "Cora":
+        if cfg.dataset.name == "Cora":
             self.graph = Planetoid("../data","Cora").get(0)
-            self.sensitive_attribute = self.graph.y
-        elif self.dataset == "NBA":
+            self.sensitive_attribute = self.graph.y.detach().clone()
+        elif cfg.dataset.name == "NBA":
             self.graph = NBADataset("../data").get(0)
-            print(self.graph)
             #Country index 36
-            self.sensitive_attribute = self.graph.x[:,36]
-        elif self.dataset == "Facebook":
+            self.sensitive_attribute = self.graph.x[:,36].detach().clone()
+        elif cfg.dataset.name == "Facebook":
             #1045 nodes 
             self.graph = SNAPDataset("../data", 'ego-facebook').get(1)
             #Male-Female indexes 666,667
+            ids = np.array(list(range(self.graph.x.shape[0])))
+            keep_rows = torch.logical_or(self.graph.x[:,666] == 1, self.graph.x[:,667] == 1)
+
+            self.graph.x = self.graph.x[keep_rows]
+
+            id_map = dict(zip(ids[keep_rows], list(range(keep_rows.sum()))))
+            
+            existing_edges = (np.sum(np.isin(self.graph.edge_index.T, list(id_map.keys())), axis=1) == 2)
+            
+            edge_index = np.vectorize(id_map.get)(self.graph.edge_index.T[existing_edges])
+            edge_index = torch.tensor(edge_index.T)
+            self.graph.edge_index = coalesce(edge_index)
+
             self.sensitive_attribute = self.graph.x[:,666].detach().clone()
-            self.sensitive_attribute[torch.logical_and(self.graph.x[:,666] == 0, self.graph.x[:,667] == 0)] = 2
 
-        elif self.dataset == "Oklahoma97":
+        elif cfg.dataset.name == "Oklahoma97":
             self.graph = CollegiateSocNet("../data", "oklahoma97").get(0)
-        elif self.dataset == "UNC28":
+            self.sensitive_attribute = self.graph.x[:,1].detach().clone()
+        elif cfg.dataset.name == "UNC28":
             self.graph = CollegiateSocNet("../data", "unc28").get(0)
+            self.sensitive_attribute = self.graph.x[:,1].detach().clone()
 
-        self.G = to_networkx(self.graph)
-        self.G = self.G.to_undirected()
-        sampled_graphs = [list(set(sampler.sample(self.G, 20))) for i in range(n_samples)]
+        self.G = to_networkx(self.graph, to_undirected=True)
+        if cfg.dataset.fair:
+            degrees =  list(set(list(dict(self.G.degree()).values())))
+            degrees += len(degrees) * [None]
+
+        sampled_graphs = [list(set(sampler.sample(self.G, 20, 
+                                                  sensitive_attribute=self.sensitive_attribute if cfg.dataset.fair else None,
+                                                  k= random.choice(degrees) if cfg.dataset.fair else None,
+                                                    ))) for i in range(n_samples)]
 
         sampled_graphs_dict = [dict(zip(sample,range(len(sample)))) for sample in sampled_graphs]
         sampled_edge_index = [subgraph(sample, self.graph.edge_index)[0].apply_(lambda x : sampled_graphs_dict[idx][x]) for idx, sample in enumerate(sampled_graphs)]
@@ -53,9 +73,9 @@ class SampledDataset(LightningDataset):
 
 class SampledDataModule(AbstractDataModule):
     def __init__(self, cfg):
-        datasets = {'train': SampledDataset(cfg.dataset.name, FairRW(), 1000),
-                    'val': SampledDataset(cfg.dataset.name, FairRW(), 100),
-                    'test': SampledDataset(cfg.dataset.name, FairRW(), 100)}
+        datasets = {'train': SampledDataset(cfg, FairRW(), 1000),
+                    'val': SampledDataset(cfg, FairRW(), 100),
+                    'test': SampledDataset(cfg, FairRW(), 100)}
         self.datasets = datasets
         super().__init__(cfg, datasets)
 

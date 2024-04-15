@@ -66,7 +66,11 @@ class NBADataset(InMemoryDataset):
         row = torch.tensor([id_map[i] for i in row])
         col = torch.tensor([id_map[i] for i in col])
 
-        edge_index = torch.stack([row, col], dim=0)
+        ##Make all edges undirected
+        rowdup = torch.cat((row,col)) 
+        coldup = torch.cat((col, row))
+
+        edge_index = torch.stack([rowdup, coldup], dim=0)
         edge_index = coalesce(edge_index)
 
         data_list.append(Data(x=x, edge_index=edge_index))

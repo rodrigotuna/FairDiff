@@ -8,13 +8,15 @@ class FairRW:
             G_ = G.subgraph(nodes_with_degree_k)
         else:
             G_ = G
-        node = None
-        while node is None or not G[node]:
-            node = random.randint(0, G_.number_of_nodes())
+
+        node = random.choice(G_.nodes())
+
         sampled_nodes = []
         for i in range(length):
             sampled_nodes.append(node)
             neighbours = G_[node]
+            if not neighbours:
+                break
             num_neigh = len(G_[node])
             prob = np.ones(num_neigh)/num_neigh
 
