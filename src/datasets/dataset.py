@@ -1,30 +1,38 @@
 import torch 
-from torch_geometric.data import Data
+import os
+import numpy as np
+import numpy.random as random
 import torch.nn.functional as F
+from torch_geometric.data import Data
 from torch_geometric.data.lightning import LightningDataset
 from torch_geometric.datasets import Planetoid, SNAPDataset
 from torch_geometric.utils import subgraph, to_networkx, coalesce
-from datasets.abstract_dataset import AbstractDatasetInfos, AbstractDataModule
+from torch_geometric.nn.models import GraphSAGE
+from torch_geometric.loader import NeighborLoader
+
 from datasets.fair_rw import FairRW
 from datasets.custom_datasets import NBADataset, CollegiateSocNet
-import numpy as np
-import numpy.random as random
+from datasets.abstract_dataset import AbstractDatasetInfos, AbstractDataModule
+
 
 class SampledDataset(LightningDataset):
     def __init__(self, cfg, sampler, n_samples):
         self.data = []
-        #qm9 = QM9("../data")
+        self.path = "../data"
 
         if cfg.dataset.name == "Cora":
-            self.graph = Planetoid("../data","Cora").get(0)
+            self.graph = Planetoid(self.path,"Cora").get(0)
+            self.path += "/Cora"
             self.sensitive_attribute = self.graph.y.detach().clone()
         elif cfg.dataset.name == "NBA":
-            self.graph = NBADataset("../data").get(0)
+            self.graph = NBADataset(self.path).get(0)
+            self.path += "/nba"
             #Country index 36
             self.sensitive_attribute = self.graph.x[:,36].detach().clone()
         elif cfg.dataset.name == "Facebook":
             #1045 nodes 
-            self.graph = SNAPDataset("../data", 'ego-facebook').get(1)
+            self.graph = SNAPDataset(self.path, 'ego-facebook').get(1)
+            self.path += "/ego-facebook"
             #Male-Female indexes 666,667
             ids = np.array(list(range(self.graph.x.shape[0])))
             keep_rows = torch.logical_or(self.graph.x[:,666] == 1, self.graph.x[:,667] == 1)
@@ -42,26 +50,55 @@ class SampledDataset(LightningDataset):
             self.sensitive_attribute = self.graph.x[:,666].detach().clone()
 
         elif cfg.dataset.name == "Oklahoma97":
-            self.graph = CollegiateSocNet("../data", "oklahoma97").get(0)
+            self.graph = CollegiateSocNet(self.path, "oklahoma97").get(0)
+            self.path += "/oklahoma97"
             self.sensitive_attribute = self.graph.x[:,1].detach().clone()
         elif cfg.dataset.name == "UNC28":
-            self.graph = CollegiateSocNet("../data", "unc28").get(0)
+            self.graph = CollegiateSocNet(self.path, "unc28").get(0)
+            self.path += "/unc28"
             self.sensitive_attribute = self.graph.x[:,1].detach().clone()
 
-        self.G = to_networkx(self.graph, to_undirected=True)
-        if cfg.dataset.fair:
-            degrees =  list(set(list(dict(self.G.degree()).values())))
-            degrees += len(degrees) * [None]
+        ##Embeddings phase
+        if os.path.isfile(self.path + "/processed/embeddings.pt"):
+            self.node_embeddings = torch.load(self.path + "/processed/embeddings.pt")
+        else:
+            print("Embeddings not found. Starting to compute")
 
-        sampled_graphs = [list(set(sampler.sample(self.G, 20, 
-                                                  sensitive_attribute=self.sensitive_attribute if cfg.dataset.fair else None,
-                                                  k= random.choice(degrees) if cfg.dataset.fair else None,
-                                                    ))) for i in range(n_samples)]
+            model = GraphSAGE(in_channels=self.graph.x.shape[1], hidden_channels=256, num_layers=2, out_channels=128)
+            device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+            model = model.to(device)
+            self.graph.to(device)
+            loader = NeighborLoader(self.graph, num_neighbors=[25,10], batch_size=128, shuffle=True)
+            optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
+
+
+            model.train()
+            for i in range(10):
+                total_loss = 0
+                for data in loader:
+                    optimizer.zero_grad()
+                    out = model(data.x, data.edge_index)
+                    loss = F.cross_entropy(out, data.y)
+                    loss.backward()
+                    optimizer.step()
+                    total_loss += loss.item()
+                print(f"Epoch {i+1}/10 Loss: {total_loss}")
+
+            model.eval()
+            with torch.no_grad():
+                self.node_embeddings = model(self.graph.x, self.graph.edge_index)
+            
+            torch.save(self.node_embeddings, self.path + "/processed/embeddings.pt") 
+        
+        self.graph.to('cpu')
+        self.G = to_networkx(self.graph, to_undirected=True)
+
+        sampled_graphs = [list(set(sampler.sample(self.G, 20))) for i in range(n_samples)]
 
         sampled_graphs_dict = [dict(zip(sample,range(len(sample)))) for sample in sampled_graphs]
         sampled_edge_index = [subgraph(sample, self.graph.edge_index)[0].apply_(lambda x : sampled_graphs_dict[idx][x]) for idx, sample in enumerate(sampled_graphs)]
         sampled_edge_attr = [torch.stack([torch.zeros(len(edge_index[0])), torch.ones(len(edge_index[0]))]).T for edge_index in sampled_edge_index]
-        sampled_x = [F.one_hot(torch.tensor(sample), num_classes = self.G.number_of_nodes()).float() for sample in sampled_graphs]
+        sampled_x = [self.node_embeddings[sample] for sample in sampled_graphs]
         self.data = [Data(x = sampled_x[idx], edge_index = sampled_edge_index[idx], edge_attr=sampled_edge_attr[idx], y=torch.zeros(1,0)) for idx, sample in enumerate(sampled_graphs)] #this can be used for fairness of links does this impact fairness?
 
     def __getitem__(self, idx):
