@@ -8,7 +8,7 @@ from torch_geometric.data.lightning import LightningDataset
 from torch_geometric.datasets import Planetoid, SNAPDataset
 from torch_geometric.utils import subgraph, to_networkx, coalesce
 from torch_geometric.nn.models import GraphSAGE
-from torch_geometric.loader import NeighborLoader
+from torch_geometric.loader import LinkNeighborLoader
 
 from datasets.fair_rw import FairRW
 from datasets.custom_datasets import NBADataset, CollegiateSocNet
@@ -32,6 +32,7 @@ class SampledDataset(LightningDataset):
         elif cfg.dataset.name == "Facebook":
             #1045 nodes 
             self.graph = SNAPDataset(self.path, 'ego-facebook').get(1)
+ 
             self.path += "/ego-facebook"
             #Male-Female indexes 666,667
             ids = np.array(list(range(self.graph.x.shape[0])))
@@ -46,7 +47,6 @@ class SampledDataset(LightningDataset):
             edge_index = np.vectorize(id_map.get)(self.graph.edge_index.T[existing_edges])
             edge_index = torch.tensor(edge_index.T)
             self.graph.edge_index = coalesce(edge_index)
-
             self.sensitive_attribute = self.graph.x[:,666].detach().clone()
 
         elif cfg.dataset.name == "Oklahoma97":
@@ -67,24 +67,28 @@ class SampledDataset(LightningDataset):
             model = GraphSAGE(in_channels=self.graph.x.shape[1], hidden_channels=256, num_layers=2, out_channels=128)
             device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
             model = model.to(device)
-            self.graph.to(device)
-            loader = NeighborLoader(self.graph, num_neighbors=[25,10], batch_size=128, shuffle=True)
+            loader = LinkNeighborLoader(self.graph, num_neighbors=[10,10], neg_sampling_ratio=1.0, batch_size=128, shuffle=True)
             optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
 
 
             model.train()
             for i in range(10):
                 total_loss = 0
-                for data in loader:
+                for batch in loader:
+                    batch.to(device)
                     optimizer.zero_grad()
-                    out = model(data.x, data.edge_index)
-                    loss = F.cross_entropy(out, data.y)
+                    h = model(batch.x, batch.edge_index)
+                    h_src = h[batch.edge_label_index[0]]
+                    h_dst = h[batch.edge_label_index[1]]
+                    pred = (h_src * h_dst).sum(dim=-1)
+                    loss = F.binary_cross_entropy_with_logits(pred, batch.edge_label)
                     loss.backward()
                     optimizer.step()
-                    total_loss += loss.item()
+                    total_loss += loss.item() / pred.size(0)
                 print(f"Epoch {i+1}/10 Loss: {total_loss}")
 
             model.eval()
+            self.graph.to(device)
             with torch.no_grad():
                 self.node_embeddings = model(self.graph.x, self.graph.edge_index).to('cpu')
             

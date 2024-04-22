@@ -55,8 +55,8 @@ class NBADataset(InMemoryDataset):
         x = pd.read_csv(raw_files[0])
         id_map = x.user_id.to_dict()
         id_map = dict(zip(id_map.values(), id_map.keys()))
-        x = torch.from_numpy(x.values)[:, 1:]
-        
+        x = torch.Tensor(x.values)[:, 1:]
+        print(x)
 
         row = pd.read_csv(raw_files[1], sep='\t', header=None,
                               usecols=[0]).squeeze()
@@ -145,7 +145,7 @@ class CollegiateSocNet(InMemoryDataset):
         x = x[non_missinng_val_rows]
 
         id_map = dict(zip(np.vectorize(total_id_map.get)(x[:,0]), list(range(x.shape[0]))))
-        x = torch.from_numpy(x)[:, 1:]
+        x = torch.Tensor(x)[:, 1:]
 
         edges = np.loadtxt(raw_files[0])
         existing_edges = (np.sum(np.isin(edges, list(id_map.keys())), axis=1) == 2)

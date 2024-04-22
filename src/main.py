@@ -5,14 +5,13 @@ from datasets.dataset import SampledDataModule, SampledDatasetInfo
 from datasets.fair_rw import FairRW
 from analysis.visualization import NonMolecularVisualization
 from model.digress.diffusion_model_discrete import DiscreteDenoisingDiffusion
+from model.digress.diffusion_model import LiftedDenoisingDiffusion
 from model.digress.diffusion.extra_features import DummyExtraFeatures
 from omegaconf import DictConfig
 import model.digress.utils as utils
 from pytorch_lightning import Trainer
-from model.digress.metrics.abstract_metrics import TrainAbstractMetricsDiscrete
-import networkx as nx
-import numpy as np
-import matplotlib.pyplot as plt
+from model.digress.metrics.abstract_metrics import TrainAbstractMetrics
+
 
 @hydra.main(version_base='1.3', config_path='../configs', config_name='config')
 def main(cfg: DictConfig):
@@ -30,15 +29,15 @@ def main(cfg: DictConfig):
                                                 domain_features=domain_features)
     model_kwargs = {
         'dataset_infos':       dataset_infos,
-        'train_metrics':       TrainAbstractMetricsDiscrete(),
+        'train_metrics':       TrainAbstractMetrics(),
         'sampling_metrics':    Comm20SamplingMetrics(datamodule),
         'visualization_tools': NonMolecularVisualization(),
         'extra_features':      extra_features,
         'domain_features':     domain_features
 
     }
-    
-    model = DiscreteDenoisingDiffusion(cfg, **model_kwargs)
+    return
+    model = LiftedDenoisingDiffusion(cfg, **model_kwargs)
     
     callbacks = []
 
