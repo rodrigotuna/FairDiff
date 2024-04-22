@@ -26,9 +26,11 @@ class AbstractDataModule(LightningDataset):
                 unique, counts = torch.unique(data.batch, return_counts=True)
                 for count in counts:
                     all_counts[count] += 1
+        print("IM HERE")
         max_index = max(all_counts.nonzero())
         all_counts = all_counts[:max_index + 1]
         all_counts = all_counts / all_counts.sum()
+
         return all_counts
 
     def node_types(self):

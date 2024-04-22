@@ -86,7 +86,7 @@ class SampledDataset(LightningDataset):
 
             model.eval()
             with torch.no_grad():
-                self.node_embeddings = model(self.graph.x, self.graph.edge_index)
+                self.node_embeddings = model(self.graph.x, self.graph.edge_index).to('cpu')
             
             torch.save(self.node_embeddings, self.path + "/processed/embeddings.pt") 
         
