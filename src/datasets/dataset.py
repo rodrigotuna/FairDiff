@@ -52,11 +52,16 @@ class SampledDataset(LightningDataset):
         if cfg.dataset.fair:
             degrees =  list(set(list(dict(self.G.degree()).values())))
             degrees += len(degrees) * [None]
-
-        sampled_graphs = [list(set(sampler.sample(self.G, 20, 
-                                                  sensitive_attribute=self.sensitive_attribute if cfg.dataset.fair else None,
-                                                  k= random.choice(degrees) if cfg.dataset.fair else None,
-                                                    ))) for i in range(n_samples)]
+        if n_samples == None:
+            sampled_graphs = [list(set(sampler.sample(self.G, 20, 
+                                                    sensitive_attribute=self.sensitive_attribute if cfg.dataset.fair else None,
+                                                    k= random.choice(degrees) if cfg.dataset.fair else None, starting_node=i
+                                                        ))) for i in range(self.graph.x.shape[0])]
+        else:
+            sampled_graphs = [list(set(sampler.sample(self.G, 20, 
+                                                    sensitive_attribute=self.sensitive_attribute if cfg.dataset.fair else None,
+                                                    k= random.choice(degrees) if cfg.dataset.fair else None,
+                                                        ))) for i in range(n_samples)]
 
         sampled_graphs_dict = [dict(zip(sample,range(len(sample)))) for sample in sampled_graphs]
         sampled_edge_index = [subgraph(sample, self.graph.edge_index)[0].apply_(lambda x : sampled_graphs_dict[idx][x]) for idx, sample in enumerate(sampled_graphs)]
@@ -73,7 +78,7 @@ class SampledDataset(LightningDataset):
 
 class SampledDataModule(AbstractDataModule):
     def __init__(self, cfg):
-        datasets = {'train': SampledDataset(cfg, FairRW(), 2000),
+        datasets = {'train': SampledDataset(cfg, FairRW(), None),
                     'val': SampledDataset(cfg, FairRW(), 100),
                     'test': SampledDataset(cfg, FairRW(), 100)}
         self.datasets = datasets
