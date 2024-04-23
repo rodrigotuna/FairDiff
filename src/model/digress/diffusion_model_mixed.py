@@ -13,10 +13,9 @@ from .diffusion import diffusion_utils
 from .metrics.train_metrics import TrainLoss
 from .metrics.abstract_metrics import SumExceptBatchMetric, SumExceptBatchMSE, NLL
 from ..digress import utils
-import pickle
 
 
-class LiftedDenoisingDiffusion(pl.LightningModule):
+class MixedDenoisingDiffusion(pl.LightningModule):
     def __init__(self, cfg, dataset_infos, train_metrics, sampling_metrics, visualization_tools, extra_features=None,
                  domain_features=None):
         super().__init__()
@@ -288,11 +287,9 @@ class LiftedDenoisingDiffusion(pl.LightningModule):
             samples_left_to_save -= to_save
             samples_left_to_generate -= to_generate
             chains_left_to_save -= chains_save
-        
-        pickle.dump(samples, open(f'sample_list.pickle', 'wb'))
 
         self.sampling_metrics.reset()
-        self.sampling_metrics(samples, self.name, self.current_epoch, self.val_counter, test=True, local_rank=self.local_rank)
+        self.sampling_metrics(samples, self.name, self.current_epoch, self.val_counter, test=True)
         self.sampling_metrics.reset()
 
     def kl_prior(self, X, E, y, node_mask):
@@ -631,15 +628,14 @@ class LiftedDenoisingDiffusion(pl.LightningModule):
         print(f"Average E coordinate at each step {[int(c) for i, c in enumerate(average_E_coord) if i % 10 == 0]}")
 
         # Finally sample the discrete data given the last latent code z0
-        print(X)
         final_graph = self.sample_discrete_graph_given_z0(X, E, y, node_mask)
         X, E, y = final_graph.X, final_graph.E, final_graph.y
         assert (E == torch.transpose(E, 1, 2)).all()
 
-        # print("Examples of generated graphs:")
-        # for i in range(min(5, X.shape[0])):
-        #     print("E", E[i])
-        #     print("X: ", X[i])
+        print("Examples of generated graphs:")
+        for i in range(min(5, X.shape[0])):
+            print("E", E[i])
+            print("X: ", X[i])
 
         # Prepare the chain for saving
         if keep_chain > 0:
@@ -713,7 +709,7 @@ class LiftedDenoisingDiffusion(pl.LightningModule):
 
         sampled = diffusion_utils.sample_normal(pred_X, pred_E, pred_y, sigma, node_mask).type_as(pred_X)
         assert (sampled.E == torch.transpose(sampled.E, 1, 2)).all()
-        print(sampled.X)
+
         sampled = utils.unnormalize(sampled.X, sampled.E, sampled.y, self.norm_values,
                                     self.norm_biases, node_mask, collapse=True)
         return sampled

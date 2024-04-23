@@ -95,6 +95,7 @@ class SampledDataset(LightningDataset):
             torch.save(self.node_embeddings, self.path + "/processed/embeddings.pt") 
         
         self.graph.to('cpu')
+        print(self.node_embeddings)
         self.G = to_networkx(self.graph, to_undirected=True)
 
         sampled_graphs = [list(set(sampler.sample(self.G, 20))) for i in range(n_samples)]
