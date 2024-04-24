@@ -155,10 +155,12 @@ def unnormalize(X, E, y, norm_values, norm_biases, node_mask, collapse=False):
     node_mask
     """
     X = (X * norm_values[0] + norm_biases[0])
+    X_ = X.clone().detach()
     E = (E * norm_values[1] + norm_biases[1])
     y = y * norm_values[2] + norm_biases[2]
-
-    return PlaceHolder(X=X, E=E, y=y).mask(node_mask, collapse)
+    ph = PlaceHolder(X=X, E=E, y=y).mask(node_mask, collapse)
+    ph.X = X_
+    return ph
 
 
 def to_dense(x, edge_index, edge_attr, batch):

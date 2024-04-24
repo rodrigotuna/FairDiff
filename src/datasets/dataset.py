@@ -64,15 +64,15 @@ class SampledDataset(LightningDataset):
         else:
             print("Embeddings not found. Starting to compute")
 
-            model = GraphSAGE(in_channels=self.graph.x.shape[1], hidden_channels=256, num_layers=2, out_channels=128)
+            model = GraphSAGE(in_channels=self.graph.x.shape[1], hidden_channels=512, num_layers=2, out_channels=128)
             device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
             model = model.to(device)
-            loader = LinkNeighborLoader(self.graph, num_neighbors=[10,10], neg_sampling_ratio=1.0, batch_size=128, shuffle=True)
+            loader = LinkNeighborLoader(self.graph, num_neighbors=[10,10], neg_sampling_ratio=0.5, batch_size=128, shuffle=True)
             optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
 
-
+            
             model.train()
-            for i in range(10):
+            for i in range(5):
                 total_loss = 0
                 for batch in loader:
                     batch.to(device)
@@ -81,11 +81,12 @@ class SampledDataset(LightningDataset):
                     h_src = h[batch.edge_label_index[0]]
                     h_dst = h[batch.edge_label_index[1]]
                     pred = (h_src * h_dst).sum(dim=-1)
+                    batch.edge_label[batch.edge_label == 1] = 0.90
                     loss = F.binary_cross_entropy_with_logits(pred, batch.edge_label)
                     loss.backward()
                     optimizer.step()
                     total_loss += loss.item() / pred.size(0)
-                print(f"Epoch {i+1}/10 Loss: {total_loss}")
+                print(f"Epoch {i+1}/5 Loss: {total_loss}")
 
             model.eval()
             self.graph.to(device)
@@ -95,7 +96,19 @@ class SampledDataset(LightningDataset):
             torch.save(self.node_embeddings, self.path + "/processed/embeddings.pt") 
         
         self.graph.to('cpu')
-        print(self.node_embeddings)
+        min_dist = 100
+        sum = 0
+        max_dist = 0
+        for i in range(self.node_embeddings.size(0)):
+            for j in range(i+1, self.node_embeddings.size(0)):
+                if np.linalg.norm(self.node_embeddings[i] - self.node_embeddings[j]) == 0:
+                    sum+=1
+                min_dist = min(min_dist, np.linalg.norm(self.node_embeddings[i] - self.node_embeddings[j]))
+                max_dist = max(max_dist, np.linalg.norm(self.node_embeddings[i] - self.node_embeddings[j]))
+
+        print(min_dist)
+        print(max_dist)
+        print(sum)
         self.G = to_networkx(self.graph, to_undirected=True)
 
         sampled_graphs = [list(set(sampler.sample(self.G, 20))) for i in range(n_samples)]

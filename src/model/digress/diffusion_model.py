@@ -598,7 +598,7 @@ class LiftedDenoisingDiffusion(pl.LightningModule):
 
         assert (E == torch.transpose(E, 1, 2)).all()
         assert number_chain_steps < self.T
-        chain_X_size = torch.Size((number_chain_steps, keep_chain, X.size(1)))
+        chain_X_size = torch.Size((number_chain_steps, keep_chain, X.size(1), X.size(2)))
         chain_E_size = torch.Size((number_chain_steps, keep_chain, E.size(1), E.size(2)))
 
         chain_X = torch.zeros(chain_X_size)
@@ -631,7 +631,7 @@ class LiftedDenoisingDiffusion(pl.LightningModule):
         print(f"Average E coordinate at each step {[int(c) for i, c in enumerate(average_E_coord) if i % 10 == 0]}")
 
         # Finally sample the discrete data given the last latent code z0
-        print(X)
+
         final_graph = self.sample_discrete_graph_given_z0(X, E, y, node_mask)
         X, E, y = final_graph.X, final_graph.E, final_graph.y
         assert (E == torch.transpose(E, 1, 2)).all()
@@ -711,13 +711,11 @@ class LiftedDenoisingDiffusion(pl.LightningModule):
         pred_y = 1. / alpha_0.squeeze(1) * (y_0 - sigma_0.squeeze(1) * eps0.y)
         assert (pred_E == torch.transpose(pred_E, 1, 2)).all()
 
-        print(pred_X)
         sampled = diffusion_utils.sample_normal(pred_X, pred_E, pred_y, sigma, node_mask).type_as(pred_X)
         assert (sampled.E == torch.transpose(sampled.E, 1, 2)).all()
-        print(sampled.X)
+
         sampled = utils.unnormalize(sampled.X, sampled.E, sampled.y, self.norm_values,
                                     self.norm_biases, node_mask, collapse=True)
-        print(sampled.X)
         return sampled
 
     def sample_p_zs_given_zt(self, s, t, X_t, E_t, y_t, node_mask):

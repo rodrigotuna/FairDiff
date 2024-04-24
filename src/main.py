@@ -36,6 +36,7 @@ def main(cfg: DictConfig):
         'domain_features':     domain_features
 
     }
+    return
     
     model = LiftedDenoisingDiffusion(cfg, **model_kwargs)
     
