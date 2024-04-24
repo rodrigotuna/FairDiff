@@ -711,11 +711,13 @@ class LiftedDenoisingDiffusion(pl.LightningModule):
         pred_y = 1. / alpha_0.squeeze(1) * (y_0 - sigma_0.squeeze(1) * eps0.y)
         assert (pred_E == torch.transpose(pred_E, 1, 2)).all()
 
+        print(pred_X)
         sampled = diffusion_utils.sample_normal(pred_X, pred_E, pred_y, sigma, node_mask).type_as(pred_X)
         assert (sampled.E == torch.transpose(sampled.E, 1, 2)).all()
         print(sampled.X)
         sampled = utils.unnormalize(sampled.X, sampled.E, sampled.y, self.norm_values,
                                     self.norm_biases, node_mask, collapse=True)
+        print(sampled.X)
         return sampled
 
     def sample_p_zs_given_zt(self, s, t, X_t, E_t, y_t, node_mask):

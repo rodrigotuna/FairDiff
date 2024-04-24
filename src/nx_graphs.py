@@ -100,3 +100,4 @@ for graph in FIFTY + TWENTY:
 ## 17 - size 50 500 subgraphs
 ## 18 - size 20 1000 subgraphs
 ## 19 - size 20 1000 subgraphs fair
+## 20 - size 20 2000 subgraphs 500 epochs
