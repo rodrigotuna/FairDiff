@@ -14,7 +14,7 @@ from .metrics.train_metrics import TrainLoss
 from .metrics.abstract_metrics import SumExceptBatchMetric, SumExceptBatchMSE, NLL
 from ..digress import utils
 import pickle
-
+import networkx as nx
 
 class LiftedDenoisingDiffusion(pl.LightningModule):
     def __init__(self, cfg, dataset_infos, train_metrics, sampling_metrics, visualization_tools, extra_features=None,
@@ -288,7 +288,12 @@ class LiftedDenoisingDiffusion(pl.LightningModule):
             samples_left_to_save -= to_save
             samples_left_to_generate -= to_generate
             chains_left_to_save -= chains_save
-        
+
+        G = nx.graph()
+        nodes = []
+        for sample in samples:
+            pass
+        print(samples[1])
         pickle.dump(samples, open(f'sample_list.pickle', 'wb'))
 
         self.sampling_metrics.reset()
