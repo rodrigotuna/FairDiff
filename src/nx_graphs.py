@@ -10,6 +10,7 @@ FOCAL = ['1000_ts_1000_gs_focal.pickle', '1000_ts_2000_gs_focal.pickle']
 FIFTY = ['1000(50)_ts_1000_gs.pickle', '1000(50)_ts_2000_gs.pickle', '500(50)_ts_1000_gs.pickle', '500(50)_ts_2000_gs.pickle']
 TWENTY = ['1000(20)_ts_1000_gs.pickle', '1000(20)_ts_2000_gs.pickle', '1000(20)_ts_1000_gs_fair.pickle', '1000(20)_ts_2000_gs_fair.pickle']
 FIVEHUNDRED = ['1000(20)_ts_1000_gs_500.pickle', '1000(20)_ts_2000_gs_500.pickle']
+PERNODE = ['1_per_node(20)_ts_1000_gs.pickle', '1_per_node(20)_ts_2000_gs.pickle']
 
 def read_graph(file):
     G = pickle.load(open(file, 'rb'))
@@ -33,7 +34,7 @@ def create_graph(file, num_samples):
                         G.add_edge(nodes[i], nodes[j])
 
             s = f.readline()
-    pickle.dump(G, open(f'1000(20)_ts_{num_samples}_gs_500.pickle', 'wb'))
+    pickle.dump(G, open(f'1_per_node(20)_ts_{num_samples}_gs.pickle', 'wb'))
     return G
 
 def eval(G):
@@ -62,13 +63,13 @@ def IoU(G_gen, G_real):
             union += 1
     return intersection/union
 
-create_graph("generated_subgraphs/generated_samples20.txt", 1000)
-create_graph("generated_subgraphs/generated_samples20.txt", 2000)
+# create_graph("generated_subgraphs/generated_samples21.txt", 1000)
+# create_graph("generated_subgraphs/generated_samples21.txt", 2000)
 
 
 
 G_real = read_graph(REAL_GRAPH)
-for graph in FIVEHUNDRED:
+for graph in PERNODE:
     print(graph)
     G = read_graph(graph)
     eval(G)
