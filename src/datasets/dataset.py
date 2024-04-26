@@ -61,7 +61,7 @@ class SampledDataset(LightningDataset):
             sampled_graphs = [list(set(sampler.sample(self.G, 20, 
                                                     sensitive_attribute=self.sensitive_attribute if cfg.dataset.fair else None,
                                                     k= random.choice(degrees) if cfg.dataset.fair else None,
-                                                        ))) for i in range(n_samples)]
+                                                        ))) for i in 40 * list(range(n_samples))]
 
         sampled_graphs_dict = [dict(zip(sample,range(len(sample)))) for sample in sampled_graphs]
         sampled_edge_index = [subgraph(sample, self.graph.edge_index)[0].apply_(lambda x : sampled_graphs_dict[idx][x]) for idx, sample in enumerate(sampled_graphs)]
