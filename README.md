@@ -31,3 +31,5 @@ Work produced for the Dissertation: "Semi-Synthetic Graph Generation"
 |2000 sample ( 1 ts pn)|2515|5361|4.26|1734|2319|0.9534|1.8733|0.4173| 0.8274 |
 |1000 sample ( 1 ts pn) 200 epochs|2161|4335|4.01|1436|1981|0.9455|1.952|0.4407|0.6167|
 |2000 sample ( 1 ts pn) 200 epochs |2430|5690|4.68|2131|2249|0.9462|1.8397|0.4484| 0.6681 |
+9 is including edges why tf are they not using
+10 = sagess
