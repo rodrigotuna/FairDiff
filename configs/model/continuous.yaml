@@ -16,4 +16,4 @@ hidden_dims : {'dx': 256, 'de': 64, 'dy': 64, 'n_head': 8, 'dim_ffX': 256, 'dim_
 normalize_factors: [2, 1, 1]
 norm_biases: [0, 0, 0]
 
-lambda_train: [5, 0]
+lambda_train: [1, 0]

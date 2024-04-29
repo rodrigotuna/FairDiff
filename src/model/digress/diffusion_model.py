@@ -289,12 +289,20 @@ class LiftedDenoisingDiffusion(pl.LightningModule):
             samples_left_to_generate -= to_generate
             chains_left_to_save -= chains_save
 
-        G = nx.graph()
+        G = nx.Graph()
         nodes = []
         for sample in samples:
-            pass
-        print(samples[1])
-        pickle.dump(samples, open(f'sample_list.pickle', 'wb'))
+            embeddings = sample[0]
+            for embedding in embeddings: ## I hate this
+                nodes.append(embedding)
+
+        min_dist = 100
+        for i in range(len(nodes)):
+            for j in range(i + 1, len(nodes)):
+                min_dist = min(min_dist, torch.norm(nodes[i] - nodes[j]))
+        
+        print(min_dist)
+        #pickle.dump(samples, open(f'sample_list.pickle', 'wb'))
 
         self.sampling_metrics.reset()
         self.sampling_metrics(samples, self.name, self.current_epoch, self.val_counter, test=True, local_rank=self.local_rank)

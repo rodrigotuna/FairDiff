@@ -96,19 +96,6 @@ class SampledDataset(LightningDataset):
             torch.save(self.node_embeddings, self.path + "/processed/embeddings.pt") 
         
         self.graph.to('cpu')
-        min_dist = 100
-        sum = 0
-        max_dist = 0
-        for i in range(self.node_embeddings.size(0)):
-            for j in range(i+1, self.node_embeddings.size(0)):
-                if np.linalg.norm(self.node_embeddings[i] - self.node_embeddings[j]) == 0:
-                    sum+=1
-                min_dist = min(min_dist, np.linalg.norm(self.node_embeddings[i] - self.node_embeddings[j]))
-                max_dist = max(max_dist, np.linalg.norm(self.node_embeddings[i] - self.node_embeddings[j]))
-
-        print(min_dist)
-        print(max_dist)
-        print(sum)
         self.G = to_networkx(self.graph, to_undirected=True)
 
         sampled_graphs = [list(set(sampler.sample(self.G, 20))) for i in range(n_samples)]
