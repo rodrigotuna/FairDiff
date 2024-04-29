@@ -53,10 +53,11 @@ class SampledDataset(LightningDataset):
             degrees =  list(set(list(dict(self.G.degree()).values())))
             degrees += len(degrees) * [None]
         if n_samples == None:
-            sampled_graphs = [list(set(sampler.sample(self.G, 20, 
-                                                    sensitive_attribute=self.sensitive_attribute if cfg.dataset.fair else None,
-                                                    k= random.choice(degrees) if cfg.dataset.fair else None, starting_node=i
-                                                        ))) for i in 40 * list(range(self.graph.x.shape[0]))]
+            total = 10 * self.graph.x.shape[0]
+            sampled_graphs = []
+            for idx, i in enumerate(10 * list(range(self.graph.x.shape[0]))):
+                sampled_graphs.append(list(set(sampler.sample(self.G, 20, starting_node=i))))
+                print(f"Graph {idx + 1}/{total}")
         else:
             sampled_graphs = [list(set(sampler.sample(self.G, 20, 
                                                     sensitive_attribute=self.sensitive_attribute if cfg.dataset.fair else None,
