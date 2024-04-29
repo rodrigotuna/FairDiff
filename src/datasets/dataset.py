@@ -56,7 +56,7 @@ class SampledDataset(LightningDataset):
             sampled_graphs = [list(set(sampler.sample(self.G, 20, 
                                                     sensitive_attribute=self.sensitive_attribute if cfg.dataset.fair else None,
                                                     k= random.choice(degrees) if cfg.dataset.fair else None, starting_node=i
-                                                        ))) for i in 40 * range(self.graph.x.shape[0])]
+                                                        ))) for i in 40 * list(range(self.graph.x.shape[0]))]
         else:
             sampled_graphs = [list(set(sampler.sample(self.G, 20, 
                                                     sensitive_attribute=self.sensitive_attribute if cfg.dataset.fair else None,
