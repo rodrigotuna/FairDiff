@@ -115,9 +115,9 @@ class SampledDataset(LightningDataset):
 
 class SampledDataModule(AbstractDataModule):
     def __init__(self, cfg):
-        datasets = {'train': SampledDataset(cfg, FairRW(), 1000),
-                    'val': SampledDataset(cfg, FairRW(), 100),
-                    'test': SampledDataset(cfg, FairRW(), 100)}
+        datasets = {'train': SampledDataset(cfg, FairRW(), 3),
+                    'val': SampledDataset(cfg, FairRW(), 1),
+                    'test': SampledDataset(cfg, FairRW(), 1)}
         self.datasets = datasets
         super().__init__(cfg, datasets)
 

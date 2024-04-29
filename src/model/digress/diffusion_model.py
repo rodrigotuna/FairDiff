@@ -297,11 +297,13 @@ class LiftedDenoisingDiffusion(pl.LightningModule):
                 nodes.append(embedding)
 
         min_dist = 100
+        max_dist = 0
         for i in range(len(nodes)):
             for j in range(i + 1, len(nodes)):
                 min_dist = min(min_dist, torch.norm(nodes[i] - nodes[j]))
-        
+                max_dist = max(max_dist, torch.norm(nodes[i] - nodes[j]))
         print(min_dist)
+        print(max_dist)
         #pickle.dump(samples, open(f'sample_list.pickle', 'wb'))
 
         self.sampling_metrics.reset()
