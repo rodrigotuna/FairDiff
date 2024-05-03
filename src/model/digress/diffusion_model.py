@@ -15,6 +15,7 @@ from .metrics.abstract_metrics import SumExceptBatchMetric, SumExceptBatchMSE, N
 from ..digress import utils
 import pickle
 import networkx as nx
+import matplotlib.pyplot as plt
 
 class LiftedDenoisingDiffusion(pl.LightningModule):
     def __init__(self, cfg, dataset_infos, train_metrics, sampling_metrics, visualization_tools, extra_features=None,
@@ -293,22 +294,31 @@ class LiftedDenoisingDiffusion(pl.LightningModule):
         nodes = []
         for sample in samples:
             embeddings = sample[0]
-            for embedding in embeddings: ## I hate this
-                nodes.append(embedding)
+            adj = sample[1]
+            nodeids = []
+            for embedding in embeddings: 
+                id = None
+                for idx, node in enumerate(nodes):
+                   if torch.norm(embedding - node) < 1.0:
+                       id = idx
+                       break
+                if not id:
+                    id = len(nodes)
+                    nodes.append(embedding)
+                nodeids.append(id)
 
-        min_dist = 100
-        max_dist = 0
-        for i in range(len(nodes)):
-            for j in range(i + 1, len(nodes)):
-                min_dist = min(min_dist, torch.norm(nodes[i] - nodes[j]))
-                max_dist = max(max_dist, torch.norm(nodes[i] - nodes[j]))
-        print(min_dist)
-        print(max_dist)
-        #pickle.dump(samples, open(f'sample_list.pickle', 'wb'))
+            for i in range(len(adj)):
+                for j in range(i+1, len(adj)):
+                    if adj[i][j] == 1:
+                        G.add_edge(nodeids[i], nodeids[j])
 
-        self.sampling_metrics.reset()
-        self.sampling_metrics(samples, self.name, self.current_epoch, self.val_counter, test=True, local_rank=self.local_rank)
-        self.sampling_metrics.reset()
+        pickle.dump(G, open('latent2.pickle', 'wb'))
+        pickle.dump(samples, open(f'sample_list2.pickle', 'wb'))
+
+
+        # self.sampling_metrics.reset()
+        # self.sampling_metrics(samples, self.name, self.current_epoch, self.val_counter, test=True, local_rank=self.local_rank)
+        # self.sampling_metrics.reset()
 
     def kl_prior(self, X, E, y, node_mask):
         """Computes the KL between q(z1 | x) and the prior p(z1) = Normal(0, 1).

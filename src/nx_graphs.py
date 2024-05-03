@@ -64,14 +64,16 @@ def IoU(G_gen, G_real):
 # create_graph("generated_subgraphs/generated_samples19.txt", 1000)
 # create_graph("generated_subgraphs/generated_samples19.txt", 2000)
 
+G = read_graph('latent.pickle')
+eval(G)
 
 
-G_real = read_graph(REAL_GRAPH)
-for graph in FIFTY + TWENTY:
-    print(graph)
-    G = read_graph(graph)
-    eval(G)
-    print(round(IoU(G, G_real),4))
+# G_real = read_graph(REAL_GRAPH)
+# for graph in FIFTY + TWENTY:
+#     print(graph)
+#     G = read_graph(graph)
+#     eval(G)
+#     print(round(IoU(G, G_real),4))
 
 
 

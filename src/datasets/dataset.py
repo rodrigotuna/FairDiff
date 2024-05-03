@@ -72,7 +72,7 @@ class SampledDataset(LightningDataset):
 
             
             model.train()
-            for i in range(5):
+            for i in range(10):
                 total_loss = 0
                 for batch in loader:
                     batch.to(device)
@@ -81,12 +81,11 @@ class SampledDataset(LightningDataset):
                     h_src = h[batch.edge_label_index[0]]
                     h_dst = h[batch.edge_label_index[1]]
                     pred = (h_src * h_dst).sum(dim=-1)
-                    batch.edge_label[batch.edge_label == 1] = 0.90
                     loss = F.binary_cross_entropy_with_logits(pred, batch.edge_label)
                     loss.backward()
                     optimizer.step()
                     total_loss += loss.item() / pred.size(0)
-                print(f"Epoch {i+1}/5 Loss: {total_loss}")
+                print(f"Epoch {i+1}/10 Loss: {total_loss}")
 
             model.eval()
             self.graph.to(device)
@@ -115,7 +114,7 @@ class SampledDataset(LightningDataset):
 
 class SampledDataModule(AbstractDataModule):
     def __init__(self, cfg):
-        datasets = {'train': SampledDataset(cfg, FairRW(), 3),
+        datasets = {'train': SampledDataset(cfg, FairRW(), 5000),
                     'val': SampledDataset(cfg, FairRW(), 1),
                     'test': SampledDataset(cfg, FairRW(), 1)}
         self.datasets = datasets
