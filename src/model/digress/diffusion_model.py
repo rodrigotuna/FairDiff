@@ -299,7 +299,7 @@ class LiftedDenoisingDiffusion(pl.LightningModule):
             for embedding in embeddings: 
                 id = None
                 for idx, node in enumerate(nodes):
-                   if torch.norm(embedding - node) < 1.0:
+                   if torch.norm(embedding - node) < 0.5:
                        id = idx
                        break
                 if not id:
@@ -312,8 +312,8 @@ class LiftedDenoisingDiffusion(pl.LightningModule):
                     if adj[i][j] == 1:
                         G.add_edge(nodeids[i], nodeids[j])
 
-        pickle.dump(G, open('latent2.pickle', 'wb'))
-        pickle.dump(samples, open(f'sample_list2.pickle', 'wb'))
+        pickle.dump(G, open('latent4.pickle', 'wb'))
+        pickle.dump(samples, open(f'sample_list4.pickle', 'wb'))
 
 
         # self.sampling_metrics.reset()

@@ -3,6 +3,7 @@ import pickle
 import matplotlib.pyplot as plt
 import numpy as np
 import powerlaw
+import torch
 
 REAL_GRAPH = 'cora.pickle'
 GRAPHS = ['1000_ts_1000_gs.pickle', '1000_ts_2000_gs.pickle', '2000_ts_1000_gs.pickle', '2000_ts_2000_gs.pickle']
@@ -64,9 +65,35 @@ def IoU(G_gen, G_real):
 # create_graph("generated_subgraphs/generated_samples19.txt", 1000)
 # create_graph("generated_subgraphs/generated_samples19.txt", 2000)
 
-G = read_graph('latent.pickle')
-eval(G)
+# G = read_graph('latent4.pickle')
+# eval(G)
 
+samples = pickle.load(open('sample_list2.pickle', 'rb'))
+print(len(samples))
+G = nx.Graph()
+nodes = []
+for sample in samples:
+    embeddings = sample[0]
+    adj = sample[1]
+    nodeids = []
+    for embedding in embeddings: 
+        id = None
+        for idx, node in enumerate(nodes):
+            if torch.norm(embedding - node) < 0.3:
+                id = idx
+                break
+        if not id:
+            id = len(nodes)
+            nodes.append(embedding)
+        nodeids.append(id)
+
+    for i in range(len(adj)):
+        for j in range(i+1, len(adj)):
+            if adj[i][j] == 1:
+                G.add_edge(nodeids[i], nodeids[j])
+
+
+eval(G)
 
 # G_real = read_graph(REAL_GRAPH)
 # for graph in FIFTY + TWENTY:
