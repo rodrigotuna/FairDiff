@@ -96,8 +96,10 @@ class SampledDataset(LightningDataset):
         
         self.graph.to('cpu')
         self.G = to_networkx(self.graph, to_undirected=True)
-
-        sampled_graphs = [list(set(sampler.sample(self.G, 20))) for i in range(n_samples)]
+        if n_samples:
+            sampled_graphs = [list(set(sampler.sample(self.G, 20))) for i in range(n_samples)]
+        else:
+            sampled_graphs = [list(set(sampler.sample(self.G, 20, starting_node=i))) for i in 4 * list(range(self.graph.x.shape[0]))]
 
         sampled_graphs_dict = [dict(zip(sample,range(len(sample)))) for sample in sampled_graphs]
         sampled_edge_index = [subgraph(sample, self.graph.edge_index)[0].apply_(lambda x : sampled_graphs_dict[idx][x]) for idx, sample in enumerate(sampled_graphs)]
@@ -114,7 +116,7 @@ class SampledDataset(LightningDataset):
 
 class SampledDataModule(AbstractDataModule):
     def __init__(self, cfg):
-        datasets = {'train': SampledDataset(cfg, FairRW(), 5000),
+        datasets = {'train': SampledDataset(cfg, FairRW(),  None),
                     'val': SampledDataset(cfg, FairRW(), 1),
                     'test': SampledDataset(cfg, FairRW(), 1)}
         self.datasets = datasets

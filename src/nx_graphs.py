@@ -67,19 +67,24 @@ def IoU(G_gen, G_real):
 
 # G = read_graph('latent4.pickle')
 # eval(G)
+#2 35 | |7817|16876|4.32|6566|7043|0.9442|1.8864|0.4335| | not sure what is this
+# 2 35 |6493|15265|4.7|8615|6086|0.9258|1.8776|0.4812| | 35 seems to be best for this
 
-samples = pickle.load(open('sample_list2.pickle', 'rb'))
+samples = pickle.load(open('sample_list4.pickle', 'rb'))
 print(len(samples))
 G = nx.Graph()
 nodes = []
-for sample in samples:
+for id,sample in enumerate(samples):
+    print(f"{id}/1000")
+    if id >= 1000:
+        break
     embeddings = sample[0]
     adj = sample[1]
     nodeids = []
     for embedding in embeddings: 
         id = None
         for idx, node in enumerate(nodes):
-            if torch.norm(embedding - node) < 0.3:
+            if torch.norm(embedding - node) < 0.35:
                 id = idx
                 break
         if not id:

@@ -2,14 +2,17 @@ import numpy as np
 import numpy.random as random
 
 class FairRW:
-    def sample(self, G, length, sensitive_attribute = None, k=None):
+    def sample(self, G, length, sensitive_attribute = None, k=None, starting_node=None):
         if k is not None:
             nodes_with_degree_k = [node for node, degree in dict(G.degree()).items() if degree == k]
             G_ = G.subgraph(nodes_with_degree_k)
         else:
             G_ = G
 
-        node = random.choice(G_.nodes())
+        if not starting_node:
+            node = random.choice(G_.nodes())
+        else:
+            node = starting_node
 
         sampled_nodes = []
         for i in range(length):

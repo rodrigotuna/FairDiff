@@ -299,7 +299,7 @@ class LiftedDenoisingDiffusion(pl.LightningModule):
             for embedding in embeddings: 
                 id = None
                 for idx, node in enumerate(nodes):
-                   if torch.norm(embedding - node) < 0.5:
+                   if torch.norm(embedding - node) < 0.35:
                        id = idx
                        break
                 if not id:
