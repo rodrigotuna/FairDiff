@@ -107,3 +107,5 @@ for graph in SAGESS:
 ## 20 - size 20 2000 subgraphs 500 epochs
 ## 21 - size 20 1 subgraph per node
 ## 22 - size 20 1 subgraph per node 200 epochs
+
+### 24 sagess let it be the same fds
