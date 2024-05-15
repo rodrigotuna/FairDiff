@@ -53,16 +53,18 @@ class SampledDataset(LightningDataset):
             degrees =  list(set(list(dict(self.G.degree()).values())))
             degrees += len(degrees) * [None]
         if n_samples == None:
-            total = 10 * self.graph.x.shape[0]
+            num_samples = (2,2) if cfg.dataset.fair else (4,0)
             sampled_graphs = []
-            for idx, i in enumerate(10 * list(range(self.graph.x.shape[0]))):
-                sampled_graphs.append(list(set(sampler.sample(self.G, 20, starting_node=i))))
-                print(f"Graph {idx + 1}/{total}")
+            for i in num_samples[0] * list(range(self.graph.x.shape[0])):
+                sampled_graphs.append(list(set(sampler.sample(self.G, 20, starting_node=i, sensitive_attribute=self.sensitive_attribute if cfg.dataset.fair else None))))
+
+            ##Sample from G_k
+            for i in num_samples[1] * list(range(self.graph.x.shape[0])):
+                sampled_graphs.append(list(set(sampler.sample(self.G, 20, k=True, starting_node=i, sensitive_attribute=self.sensitive_attribute if cfg.dataset.fair else None))))
+
         else:
             sampled_graphs = [list(set(sampler.sample(self.G, 20, 
-                                                    sensitive_attribute=self.sensitive_attribute if cfg.dataset.fair else None,
-                                                    k= random.choice(degrees) if cfg.dataset.fair else None,
-                                                        ))) for i in range(n_samples)]
+                                                    sensitive_attribute=self.sensitive_attribute if cfg.dataset.fair else None))) for i in range(n_samples)]
 
         sampled_graphs_dict = [dict(zip(sample,range(len(sample)))) for sample in sampled_graphs]
         sampled_edge_index = [subgraph(sample, self.graph.edge_index)[0].apply_(lambda x : sampled_graphs_dict[idx][x]) for idx, sample in enumerate(sampled_graphs)]

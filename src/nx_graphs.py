@@ -11,7 +11,7 @@ FIFTY = ['1000(50)_ts_1000_gs.pickle', '1000(50)_ts_2000_gs.pickle', '500(50)_ts
 TWENTY = ['1000(20)_ts_1000_gs.pickle', '1000(20)_ts_2000_gs.pickle', '1000(20)_ts_1000_gs_fair.pickle', '1000(20)_ts_2000_gs_fair.pickle']
 FIVEHUNDRED = ['1000(20)_ts_1000_gs_500.pickle', '1000(20)_ts_2000_gs_500.pickle']
 PERNODE = ['1_per_node(20)_ts_1000_gs.pickle', '1_per_node(20)_ts_2000_gs.pickle', '1_per_node(20)_ts_1000_gs_200.pickle', '1_per_node(20)_ts_2000_gs_200.pickle']
-SAGESS = ['sagess1000.pickle', 'sagess2000.pickle', 'sagess_real.pickle']
+SAGESS = ['sagess_real_for_real.pickle']
 
 def read_graph(file):
     G = pickle.load(open(file, 'rb'))
@@ -36,7 +36,7 @@ def create_graph(file, num_samples):
             s = f.readline()
             if G.number_of_edges() >= 5278:
                 break
-    pickle.dump(G, open(f'sagess_real.pickle', 'wb'))
+    pickle.dump(G, open(f'sagess_real_for_real.pickle', 'wb'))
     return G
 
 def eval(G):
@@ -66,7 +66,7 @@ def IoU(G_gen, G_real):
     return intersection/union
 
 # create_graph("generated_subgraphs/generated_samples23.txt", 1000)
-create_graph("generated_subgraphs/generated_samples23.txt", 2000)
+create_graph("generated_subgraphs/generated_samples24.txt", 2000)
 
 
 

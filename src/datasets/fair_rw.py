@@ -4,6 +4,7 @@ import numpy.random as random
 class FairRW:
     def sample(self, G, length, sensitive_attribute = None, k=None, starting_node=None):
         if k is not None:
+            k = G.degree(starting_node)
             nodes_with_degree_k = [node for node, degree in dict(G.degree()).items() if degree == k]
             G_ = G.subgraph(nodes_with_degree_k)
         else:
