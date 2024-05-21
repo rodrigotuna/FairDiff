@@ -49,7 +49,7 @@ class SampledDataset(LightningDataset):
             self.sensitive_attribute = self.graph.x[:,1].detach().clone()
 
         self.G = to_networkx(self.graph, to_undirected=True)
-
+        
         if n_samples == None:
             num_samples = (2,2) if cfg.dataset.fair else (4,0)
             sampled_graphs = []
