@@ -1,0 +1,7 @@
+# @package _global_
+dataset:
+  name: 'Cora'
+  fair: False
+
+model:
+  focal: True

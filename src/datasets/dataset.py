@@ -49,9 +49,7 @@ class SampledDataset(LightningDataset):
             self.sensitive_attribute = self.graph.x[:,1].detach().clone()
 
         self.G = to_networkx(self.graph, to_undirected=True)
-        if cfg.dataset.fair:
-            degrees =  list(set(list(dict(self.G.degree()).values())))
-            degrees += len(degrees) * [None]
+
         if n_samples == None:
             num_samples = (2,2) if cfg.dataset.fair else (4,0)
             sampled_graphs = []
@@ -90,6 +88,7 @@ class SampledDataModule(AbstractDataModule):
 
 class SampledDatasetInfo(AbstractDatasetInfos):
     def __init__(self, datamodule, cfg):
+        self.num_edges = datamodule.datasets['train'].G.number_of_edges()
         self.n_nodes = datamodule.node_counts()
         self.node_types = datamodule.node_types()
         self.edge_types = datamodule.edge_counts()

@@ -261,7 +261,9 @@ class DiscreteDenoisingDiffusion(pl.LightningModule):
         samples = []
         id = 0
         torch.cuda.empty_cache()
-        while samples_left_to_generate > 0:
+        G = nx.Graph()
+        while G.number_of_edges() < self.dataset_info.num_edges:
+            print(self.dataset_info.num_edges)
             self.print(f'Samples left to generate: {samples_left_to_generate}/'
                        f'{self.cfg.general.final_model_samples_to_generate}', end='', flush=True)
             bs = 2
@@ -270,16 +272,25 @@ class DiscreteDenoisingDiffusion(pl.LightningModule):
             chains_save = min(chains_left_to_save, bs)
             samples.extend(self.sample_batch(id, to_generate, num_nodes=None, save_final=to_save,
                                              keep_chain=chains_save, number_chain_steps=self.number_chain_steps))
+            for item in samples[-bs:]:
+                atoms = item[0].tolist()
+                for idx, bond_list in enumerate(item[1]):
+                    for idy, bond in enumerate(bond_list):
+                        if bond == 1:
+                            G.add_edge(atoms[idx], atoms[idy])
             id += to_generate
             samples_left_to_save -= to_save
             samples_left_to_generate -= to_generate
             chains_left_to_save -= chains_save
+
+            
         self.print("Saving the generated graphs")
-        filename = f'generated_subgraphs/generated_samples1.txt'
-        G = nx.Graph()
+        fair = '_fair' if self.cfg.dataset.fair else ''
+        focal = '_focal' if self.cfg.model.focal else ''
+        filename = f'generated_subgraphs/{self.cfg.dataset.name}{fair}{focal}.txt'
         for i in range(2, 50):
             if os.path.exists(filename):
-                filename = f'generated_subgraphs/generated_samples{i}.txt'
+                filename = f'{filename[:-4]}{i}.txt'
             else:
                 break
         with open(filename, 'w') as f:
@@ -299,8 +310,8 @@ class DiscreteDenoisingDiffusion(pl.LightningModule):
                     f.write("\n")
                 f.write("\n")
         self.print("Generated graphs Saved. Computing sampling metrics...")
-        pickle.dump(G, open(f'{filename}.pickle', 'wb'))
-        self.sampling_metrics(samples, self.name, self.current_epoch, self.val_counter, test=True, local_rank=self.local_rank)
+        pickle.dump(G, open(f'{filename[:-4]}.pickle', 'wb'))
+        #self.sampling_metrics(samples, self.name, self.current_epoch, self.val_counter, test=True, local_rank=self.local_rank)
         self.print("Done testing.")
 
 

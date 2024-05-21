@@ -1,0 +1,7 @@
+# @package _global_
+dataset:
+  name: 'NBA'
+  fair: True
+
+model:
+  focal: False
