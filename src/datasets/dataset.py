@@ -89,6 +89,7 @@ class SampledDataModule(AbstractDataModule):
 class SampledDatasetInfo(AbstractDatasetInfos):
     def __init__(self, datamodule, cfg):
         self.num_edges = datamodule.datasets['train'].G.number_of_edges()
+        print(self.num_edges)
         self.n_nodes = datamodule.node_counts()
         self.node_types = datamodule.node_types()
         self.edge_types = datamodule.edge_counts()
