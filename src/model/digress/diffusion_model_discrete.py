@@ -283,6 +283,9 @@ class DiscreteDenoisingDiffusion(pl.LightningModule):
             samples_left_to_generate -= to_generate
             chains_left_to_save -= chains_save
 
+            if samples_left_to_generate <= 0:
+                samples_left_to_generate = bs
+
             
         self.print("Saving the generated graphs")
         fair = '_fair' if self.cfg.dataset.fair else ''
@@ -523,9 +526,11 @@ class DiscreteDenoisingDiffusion(pl.LightningModule):
             assert isinstance(num_nodes, torch.Tensor)
             n_nodes = num_nodes
         n_max = torch.max(n_nodes).item()
+
         # Build the masks
         arange = torch.arange(n_max, device=self.device).unsqueeze(0).expand(batch_size, -1)
         node_mask = arange < n_nodes.unsqueeze(1)
+        
         # Sample noise  -- z has size (n_samples, n_nodes, n_features)
         z_T = diffusion_utils.sample_discrete_feature_noise(limit_dist=self.limit_dist, node_mask=node_mask)
         X, E, y = z_T.X, z_T.E, z_T.y
