@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import powerlaw
 import torch
+import heapq
 
 REAL_GRAPH = 'cora.pickle'
 GRAPHS = ['1000_ts_1000_gs.pickle', '1000_ts_2000_gs.pickle', '2000_ts_1000_gs.pickle', '2000_ts_2000_gs.pickle']
@@ -70,9 +71,118 @@ def IoU(G_gen, G_real):
 #2 35 | |7817|16876|4.32|6566|7043|0.9442|1.8864|0.4335| | not sure what is this
 # 2 35 |6493|15265|4.7|8615|6086|0.9258|1.8776|0.4812| | 35 seems to be best for this
 
+
 samples = pickle.load(open('sample_list4.pickle', 'rb'))
 print(len(samples))
 G = nx.Graph()
+
+
+num_nodes = 0
+samples = samples[:1000]
+goes_to = np.zeros(len(samples)+1, dtype=int)
+
+size = []
+
+for id,sample in enumerate(samples):
+    embeddings = sample[0]
+    adj = sample[1]
+    assert (adj == adj.T).all()
+
+    keep_nodes = ~(adj == 0).all(axis = 1)
+    embeddings = embeddings[keep_nodes]
+    adj = adj[keep_nodes]
+    adj = adj[:, keep_nodes]
+    
+    samples[id][0] = embeddings
+    samples[id][1] = adj
+
+    if id != 0:
+        goes_to[id] = num_nodes
+    num_nodes += len(embeddings)
+
+goes_to[len(samples)] = num_nodes
+
+total_nodes = np.zeros((num_nodes, 128))
+dsu = np.arange(num_nodes, dtype=int)
+
+for id in range(len(samples)):
+    total_nodes[goes_to[id]:goes_to[id+1]] = samples[id][0]
+
+pairs_of_nodes = np.zeros(num_nodes*num_nodes)
+pairs_x = np.zeros(num_nodes*num_nodes, dtype=int)
+pairs_y = np.zeros(num_nodes*num_nodes, dtype=int)
+
+size = np.ones(num_nodes)
+
+pair_it = 0
+
+for id,sample in enumerate(samples):
+    print(f"{id}/{len(samples)}")
+    for ide, embed in enumerate(sample[0]):
+        pairs_of_nodes[pair_it:pair_it + goes_to[id]] = np.linalg.norm(total_nodes[0:goes_to[id]] - embed.numpy(), axis=1)
+        pairs_x[pair_it:pair_it + goes_to[id]] = np.arange(goes_to[id]) 
+        if id != 0:
+            pairs_y[pair_it:pair_it + goes_to[id]] = goes_to[id] + ide
+        pair_it += goes_to[id]
+
+pairs_of_nodes = pairs_of_nodes[:pair_it]
+pairs_x = pairs_x[:pair_it]
+pairs_y = pairs_y[:pair_it]        
+
+def find(i):
+    while(dsu[i] != i):
+        i = dsu[i]
+    return i
+
+def same(a,b):
+    return find(a) == find(b)
+
+
+def unite(a,b):
+    a = find(a)
+    b = find(b)
+    if (size[a] < size[b]): a,b = b,a
+    size[a] += size[b]
+    dsu[b] = a
+
+
+while num_nodes > 10_000:
+    i = np.argmin(pairs_of_nodes)
+    x = pairs_x[i]
+    y = pairs_y[i]
+
+    pairs_of_nodes = np.delete(pairs_of_nodes, i)
+    pairs_x = np.delete(pairs_x, i)
+    pairs_y = np.delete(pairs_y, i)
+
+    if not same(x,y):
+        num_nodes -= 1
+        print(num_nodes)
+        unite(x,y)
+
+
+print(num_nodes)
+
+G  =nx.Graph()
+
+for id,sample in enumerate(samples):
+    embeddings = sample[0]
+    adj = sample[1]
+
+    for idx in range(len(adj)):
+        for idy in range(len(adj)):
+            if idx == idy:
+                continue
+            if adj[idx][idy] == 1:
+                G.add_edge(find(goes_to[id] + idx), find(goes_to[id] + idy))
+
+
+
+eval(G)
+
+exit()
+samples = pickle.load(open('sample_list4.pickle', 'rb'))
+
 nodes = []
 for id,sample in enumerate(samples):
     print(f"{id}/1000")
@@ -98,7 +208,12 @@ for id,sample in enumerate(samples):
                 G.add_edge(nodeids[i], nodeids[j])
 
 
+
+
 eval(G)
+
+
+
 
 # G_real = read_graph(REAL_GRAPH)
 # for graph in FIFTY + TWENTY:

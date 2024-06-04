@@ -26,7 +26,6 @@ Work produced for the Dissertation: "Semi-Synthetic Graph Generation"
 |1000 sample (1000 ts 20) FAIR |1427|2517|3.53|643|1304|0.9503|2.045|0.4213|0.3517|
 |2000 sample (1000 ts 20) FAIR |1695|3435|4.05|982|1597|0.9474|1.9381|0.4403|0.4151|
 
-
 ## Measures
 
 IDI does it make sense because the nodes are the same
