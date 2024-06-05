@@ -9,6 +9,7 @@ from datasets.fair_rw import FairRW
 from datasets.custom_datasets import NBADataset, CollegiateSocNet
 import numpy as np
 import numpy.random as random
+import pickle
 
 class SampledDataset(LightningDataset):
     def __init__(self, cfg, sampler, n_samples):
@@ -18,6 +19,8 @@ class SampledDataset(LightningDataset):
         if cfg.dataset.name == "Cora":
             self.graph = Planetoid("../data","Cora").get(0)
             self.sensitive_attribute = self.graph.y.detach().clone()
+            self.sensitive_attribute = 1 * (self.sensitive_attribute == 3)
+
         elif cfg.dataset.name == "NBA":
             self.graph = NBADataset("../data").get(0)
             #Country index 36
@@ -49,7 +52,10 @@ class SampledDataset(LightningDataset):
             self.sensitive_attribute = self.graph.x[:,1].detach().clone()
 
         self.G = to_networkx(self.graph, to_undirected=True)
-        
+        pickle.dump(self.G, open(f'eval/real/{cfg.dataset.name}.pickle', 'wb'))
+        pickle.dump(self.sensitive_attribute, open(f'eval/real/{cfg.dataset.name}_sa.pickle', 'wb'))
+
+
         if n_samples == None:
             num_samples = (2,2) if cfg.dataset.fair else (4,0)
             sampled_graphs = []
