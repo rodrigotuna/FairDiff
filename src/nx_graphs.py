@@ -176,7 +176,7 @@ for id,sample in enumerate(samples):
             if adj[idx][idy] == 1:
                 G.add_edge(find(goes_to[id] + idx), find(goes_to[id] + idy))
 
-
+#Reportar as duas formas de criar grafos.
 
 eval(G)
 
