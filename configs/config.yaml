@@ -1,5 +1,5 @@
 defaults:
     - general : general_default
-    - model : discrete
+    - model : continuous
     - train : train_default
     - dataset : cora
