@@ -4,17 +4,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import powerlaw
 
-# REAL_GRAPH = 'cora.pickle'
-# GRAPHS = ['1000_ts_1000_gs.pickle', '1000_ts_2000_gs.pickle', '2000_ts_1000_gs.pickle', '2000_ts_2000_gs.pickle']
-# FOCAL = ['1000_ts_1000_gs_focal.pickle', '1000_ts_2000_gs_focal.pickle']
-# FIFTY = ['1000(50)_ts_1000_gs.pickle', '1000(50)_ts_2000_gs.pickle', '500(50)_ts_1000_gs.pickle', '500(50)_ts_2000_gs.pickle']
-# TWENTY = ['1000(20)_ts_1000_gs.pickle', '1000(20)_ts_2000_gs.pickle', '1000(20)_ts_1000_gs_fair.pickle', '1000(20)_ts_2000_gs_fair.pickle']
-# FIVEHUNDRED = ['1000(20)_ts_1000_gs_500.pickle', '1000(20)_ts_2000_gs_500.pickle']
-# PERNODE = ['1_per_node(20)_ts_1000_gs.pickle', '1_per_node(20)_ts_2000_gs.pickle', '1_per_node(20)_ts_1000_gs_200.pickle', '1_per_node(20)_ts_2000_gs_200.pickle']
-# SAGESS = ['sagess_real_for_real.pickle']
 DATASETS = ['Cora', 'Facebook', 'NBA', 'Oklahoma97', 'UNC28']
 MODELS = ['', 'fair', 'fair_focal', 'focal', 'graphrnn', 'cell', 'netgan']
-MODELS = ['cell', 'graphrnn']
 
 
 def read(file):
@@ -46,6 +37,7 @@ def create_graph(file, num_samples):
 
 def eval(G, G_real):
     degrees = list(dict(G.degree()).values())
+    max_deg = max(degrees)
     avg_deg = sum(degrees)/len(degrees)
     triangles = nx.triangles(G)
     scc = nx.connected_components(G)
@@ -57,8 +49,12 @@ def eval(G, G_real):
     plaw = powerlaw.Fit(degrees, xmin=min(degrees), verbose=False)
     avg_deg_diff = np.abs(np.subtract.outer(degrees, degrees)).mean()
     gini = avg_deg_diff / (np.mean(degrees)*2)
-    print(f" & {G.number_of_nodes()} & {G.number_of_edges()} & {round(avg_deg,4)} & {int(sum(triangles.values())/3)} & {max(scc_size)} & {round(rel_edge_dist,4)} & {round(plaw.alpha, 4)} & {round(gini,4)} & {round(IoU(G, G_real),4)} \\\\")
+    print(f" & {G.number_of_nodes()} & {G.number_of_edges()} & {round(max_deg,4)} & {int(sum(triangles.values())/3)} & {max(scc_size)} & {round(rel_edge_dist,4)} & {round(plaw.alpha, 4)} & {round(gini,4)} & {round(IoU(G, G_real),4)} \\\\")
 
+
+def max_deg(G):
+    degrees = list(dict(G.degree()).values())
+    return max(degrees)
 
 def avg_deg(G):
     degrees = list(dict(G.degree()).values())
@@ -133,7 +129,7 @@ print("\\begin{tabular}{ccccccccccc} \n \\hline")
 print(" & \multicolumn{1}{c}{Method} & \
       \multicolumn{1}{c}{Nodes} & \
       \multicolumn{1}{c}{Edges} & \
-      \multicolumn{1}{c}{Avg Deg} & \
+      \multicolumn{1}{c}{Max Deg} & \
       \multicolumn{1}{c}{TC} & \
       \multicolumn{1}{c}{LCC} & \
       \multicolumn{1}{c}{EDE} & \
