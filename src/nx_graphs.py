@@ -71,14 +71,13 @@ def IoU(G_gen, G_real):
 #2 35 | |7817|16876|4.32|6566|7043|0.9442|1.8864|0.4335| | not sure what is this
 # 2 35 |6493|15265|4.7|8615|6086|0.9258|1.8776|0.4812| | 35 seems to be best for this
 
+import sys
 
-samples = pickle.load(open('sample_list4.pickle', 'rb'))
+samples = pickle.load(open(f'../eval/gen/sample_{sys.argv[1]}.pickle', 'rb'))
 print(len(samples))
-G = nx.Graph()
 
 
 num_nodes = 0
-samples = samples[:1000]
 goes_to = np.zeros(len(samples)+1, dtype=int)
 
 size = []
@@ -146,71 +145,73 @@ def unite(a,b):
     dsu[b] = a
 
 
-while num_nodes > 10_000:
-    i = np.argmin(pairs_of_nodes)
+index = np.argsort(pairs_of_nodes)
+
+for i in index:
+    if num_nodes <= 5000:
+        break
     x = pairs_x[i]
     y = pairs_y[i]
-
-    pairs_of_nodes = np.delete(pairs_of_nodes, i)
-    pairs_x = np.delete(pairs_x, i)
-    pairs_y = np.delete(pairs_y, i)
 
     if not same(x,y):
         num_nodes -= 1
         print(num_nodes)
         unite(x,y)
 
+    if num_nodes in [5000,6000,7000,8000,9000,10000]:
+        G  =nx.Graph()
+        for id,sample in enumerate(samples):
+            embeddings = sample[0]
+            adj = sample[1]
 
-print(num_nodes)
+            for idx in range(len(adj)):
+                for idy in range(len(adj)):
+                    if idx == idy:
+                        continue
+                    if adj[idx][idy] == 1:
+                        G.add_edge(find(goes_to[id] + idx), find(goes_to[id] + idy))
 
-G  =nx.Graph()
+        pickle.dump(G, open(f'../eval/gen/{sys.argv[1]}_nodes_{num_nodes}.pickle', 'wb'))
 
-for id,sample in enumerate(samples):
-    embeddings = sample[0]
-    adj = sample[1]
-
-    for idx in range(len(adj)):
-        for idy in range(len(adj)):
-            if idx == idy:
-                continue
-            if adj[idx][idy] == 1:
-                G.add_edge(find(goes_to[id] + idx), find(goes_to[id] + idy))
-
+    
 #Reportar as duas formas de criar grafos.
-
-eval(G)
-
-exit()
-samples = pickle.load(open('sample_list4.pickle', 'rb'))
-
-nodes = []
-for id,sample in enumerate(samples):
-    print(f"{id}/1000")
-    if id >= 1000:
-        break
-    embeddings = sample[0]
-    adj = sample[1]
-    nodeids = []
-    for embedding in embeddings: 
-        id = None
-        for idx, node in enumerate(nodes):
-            if torch.norm(embedding - node) < 0.35:
-                id = idx
-                break
-        if not id:
-            id = len(nodes)
-            nodes.append(embedding)
-        nodeids.append(id)
-
-    for i in range(len(adj)):
-        for j in range(i+1, len(adj)):
-            if adj[i][j] == 1:
-                G.add_edge(nodeids[i], nodeids[j])
+samples = pickle.load(open(f'../eval/gen/sample_{sys.argv[1]}.pickle', 'rb'))
 
 
+for threshold in [0.35, 0.40, 0.45, 0.50]: 
+    print("Generating graph with threshold: ", threshold)
+    nodes = np.zeros((0, 128))
+    G = nx.Graph()
+    for id,sample in enumerate(samples):
+        print(f"{id}/1000")
+        embeddings = sample[0]
+        adj = sample[1]
+        nodeids = []
+        for embedding in embeddings: 
+            id = None
+            vec = nodes - embedding.numpy()
+            if vec.shape[0] != 0:
+                vec = np.linalg.norm(vec, axis=1)
+                idx = np.argmin(vec)
+                if  vec[idx] < threshold:
+                        nodeids.append(idx)
+                        continue
+                
+            id = nodes.shape[0]
+            nodes = np.append(nodes, [embedding.numpy()], axis=0)
+            nodeids.append(id)
 
 
-eval(G)
+        for i in range(len(adj)):
+            for j in range(i+1, len(adj)):
+                if adj[i][j] == 1:
+                    G.add_edge(nodeids[i], nodeids[j])
+        
+    print("Saving Graph")
+    pickle.dump(G, open(f'../eval/gen/{sys.argv[1]}_ths_{threshold}.pickle', 'wb'))
+        
+
+
 
 
 
