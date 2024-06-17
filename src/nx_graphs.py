@@ -5,7 +5,7 @@ import numpy as np
 import powerlaw
 
 DATASETS = ['Cora', 'Facebook', 'NBA', 'Oklahoma97', 'UNC28']
-MODELS = ['', 'fair', 'fair_focal', 'focal', 'graphrnn', 'cell', 'netgan']
+MODELS = ['fair', 'fair_focal','', 'focal', 'graphrnn', 'cell', 'netgan']
 
 
 def read(file):
@@ -125,42 +125,58 @@ def IoU(G_gen, G_real):
     return intersection/union
 
 
-print("\\begin{tabular}{ccccccccccc} \n \\hline")
+# print("\\begin{tabular}{ccccccccccc} \n \\hline")
+# print(" & \multicolumn{1}{c}{Method} & \
+#       \multicolumn{1}{c}{Nodes} & \
+#       \multicolumn{1}{c}{Edges} & \
+#       \multicolumn{1}{c}{Max Deg} & \
+#       \multicolumn{1}{c}{TC} & \
+#       \multicolumn{1}{c}{LCC} & \
+#       \multicolumn{1}{c}{EDE} & \
+#       \multicolumn{1}{c}{PLE} & \
+#       \multicolumn{1}{c}{Gini} &\
+#       \multicolumn{1}{c}{IoU}\
+#       \\\\ \n \hline")
+
+# for dataset in DATASETS:
+#     path = "eval/real"
+#     G_real = read(f"{path}/{dataset}.pickle")
+#     sens_attr = read(f"{path}/{dataset}_sa.pickle")
+#     print("\\parbox[t]{2mm}{\\multirow{7}{*}{\\rotatebox[origin=c]{90}{", dataset, "}}} & Real ")
+#     eval(G_real, G_real)
+#     for model in MODELS:
+#         path = "eval/gen"
+#         G = read(f"{path}/{dataset}_{model}.pickle")
+#         print(f"&{model}", end="")
+#         eval(G, G_real)
+#     print("\\hline")
+
+print("\nFAIRNESS\n")
+
+
+print("\\begin{tabular}{ccccccc} \n \\hline")
 print(" & \multicolumn{1}{c}{Method} & \
-      \multicolumn{1}{c}{Nodes} & \
-      \multicolumn{1}{c}{Edges} & \
       \multicolumn{1}{c}{Max Deg} & \
       \multicolumn{1}{c}{TC} & \
       \multicolumn{1}{c}{LCC} & \
       \multicolumn{1}{c}{EDE} & \
       \multicolumn{1}{c}{PLE} & \
-      \multicolumn{1}{c}{Gini} &\
-      \multicolumn{1}{c}{IoU}\
+      \multicolumn{1}{c}{Gini} \
       \\\\ \n \hline")
 
 for dataset in DATASETS:
     path = "eval/real"
     G_real = read(f"{path}/{dataset}.pickle")
     sens_attr = read(f"{path}/{dataset}_sa.pickle")
-    print("\\parbox[t]{2mm}{\\multirow{3}{*}{\\rotatebox[origin=c]{90}{", dataset, "}}} & Real ")
-    eval(G_real, G_real)
+    print("\\parbox[t]{2mm}{\\multirow{7}{*}{\\rotatebox[origin=c]{90}{", dataset, "}}}")
     for model in MODELS:
-        path = "eval/gen"
-        G = read(f"{path}/{dataset}_{model}.pickle")
-        print(f"&{model}", end="")
-        eval(G, G_real)
-    print("\\hline")
-
-print("\nFAIRNESS\n")
-for dataset in DATASETS:
-    path = "eval/real"
-    G_real = read(f"{path}/{dataset}.pickle")
-    sens_attr = read(f"{path}/{dataset}_sa.pickle")
-    for model in MODELS:
+        print(f"& {model} ")
         path = "eval/gen"
         G = read(f"{path}/{dataset}_{model}.pickle")
         eval_fair(G, G_real, sens_attr)
     print("\\hline")
+
+print("\end{tabular}")
 
 
 
