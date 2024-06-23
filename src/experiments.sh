@@ -2,7 +2,7 @@
 ## CORA
 python main.py train=train_vm dataset=cora
 python main.py train=train_vm +experiment=cora_fair
-#python main.py train=train_vm +experiment=cora_focal
+python main.py train=train_vm +experiment=cora_focal
 python main.py train=train_vm +experiment=cora_fair_focal
 
 ## FB

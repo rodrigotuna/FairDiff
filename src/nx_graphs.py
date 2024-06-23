@@ -22,11 +22,14 @@ def read(file):
     return G
 
 
-def create_graph(file, num_samples):
+def create_graph(file, num_samples, output):
     G = nx.Graph()
+    nodes_tot = []
     with open(file, "r") as f:
         for i in range(num_samples):
             s = f.readline()
+            if s == "":
+                break
             N = int(s[2:])
             s = f.readline()
             s = f.readline()
@@ -39,10 +42,12 @@ def create_graph(file, num_samples):
                     if(l[j]) == '1':
                         G.add_edge(nodes[i], nodes[j])
             s = f.readline()
-            if G.number_of_edges() >= 5278:
-                break
-    pickle.dump(G, open(f'sagess_real_for_real.pickle', 'wb'))
-    return G
+            G.number_of_nodes()
+            nodes_tot.append(G.number_of_nodes())
+    if num_samples == 50:
+        print("Dumping")
+    #pickle.dump(G, open(f'{output}', 'wb'))
+    return nodes_tot
 
 def eval(G, G_real):
     degrees = list(dict(G.degree()).values())
@@ -59,6 +64,7 @@ def eval(G, G_real):
     avg_deg_diff = np.abs(np.subtract.outer(degrees, degrees)).mean()
     gini = avg_deg_diff / (np.mean(degrees)*2)
     print(f" & {G.number_of_nodes()} & {G.number_of_edges()} & {round(max_deg,4)} & {int(sum(triangles.values())/3)} & {round(rel_edge_dist,4)}  & {round(gini,4)} & {round(clusterCoeff(G),4)} & {round(assortativity(G),4)} & {round(IoU(G, G_real),4)} \\\\")
+    #return [max_deg(G), triangles(G), edge_dist_ent(G), gini(G), clusterCoeff(G), assortativity(G)]
 
 
 def max_deg(G):
@@ -88,7 +94,8 @@ def edge_dist_ent(G):
 
 def plaw(G):
     degrees = list(dict(G.degree()).values())
-    pl = powerlaw.Fit(degrees, xmin=min(degrees), verbose=False)
+    xmin = min(degrees)
+    pl = powerlaw.Fit(degrees, xmin = np.min(degrees), verbose=False)
     return pl.alpha
 
 def gini(G):
@@ -123,9 +130,9 @@ def eval_fair(G, G_real, sensitive_attr):
 
     fair = lambda x : fair_metric(Gp, Gp_bar, G_realp, G_realp_bar, x)
 
-    print(f"& {round(fair(avg_deg),4)} & {round(fair(max_deg),4)} & {round(fair(max_scc),4)} & {round(fair(edge_dist_ent),4)} & {round(fair(plaw),4)} & {round(fair(gini),4)} \\\\")
+    print(f"& {round(fair(avg_deg),4)}  & {round(fair(max_scc),4)} & {round(fair(edge_dist_ent),4)} & {round(fair(plaw),4)} & {round(fair(gini),4)} & {round(fair(assortativity),4)} \\\\")
 
-    return [round(fair(avg_deg),4), round(fair(max_deg),4) , round(fair(max_scc),4), round(fair(edge_dist_ent),4), round(fair(plaw),4), round(fair(gini),4), round(fair(triangles),4), round(fair(clusterCoeff),4), round(fair(assortativity),4)]
+    return [fair(avg_deg), fair(max_scc), fair(edge_dist_ent), fair(plaw), fair(gini), fair(assortativity)]
 
 
 #see node level metrics in graph and then split. and then compare avg with cluster, degeee connectivity, compare mmd? centrality. if this is better than sagess i gues.s 
@@ -201,7 +208,7 @@ def eval_fair2(G, G_real, sensitive_attr):
     deg_mes = np.abs(compute_mmd(deg_real_p, deg_p) - compute_mmd(deg_real_pbar, deg_pbar))
     coeff_mes = np.abs(compute_mmd(coeff_real_p, coeff_p) - compute_mmd(coeff_real_pbar, coeff_pbar))
     centr_mes = np.abs(compute_mmd(centr_real_p, centr_p) - compute_mmd(centr_real_pbar, centr_pbar))
-
+    print(f"& {deg_mes:.4E}  & {coeff_mes:.4E} & {centr_mes:.4E} \\\\")
     return [deg_mes, coeff_mes, centr_mes]
 
 
@@ -217,8 +224,184 @@ def IoU(G_gen, G_real):
             union += 1
     return intersection/union
 
-real = []
-metric = []
+# real = []
+# metric = []
+
+# # print("\\begin{tabular}{cccc|ccccccc} \n \\hline")
+# # print(" & \multicolumn{1}{c}{Method} & \
+# #       \multicolumn{1}{c}{Nodes} & \
+# #       \multicolumn{1}{c}{Edges} & \
+# #       \multicolumn{1}{c}{Max Deg} & \
+# #       \multicolumn{1}{c}{TC} & \
+# #       \multicolumn{1}{c}{EDE} & \
+# #       \multicolumn{1}{c}{Gini} &\
+# #       \multicolumn{1}{c}{CC} &\
+# #       \multicolumn{1}{c}{Assort.} &\
+# #       \multicolumn{1}{c}{IoU}\
+# #       \\\\ \n \hline")
+# for dataset in DATASETS:
+#     dataset_m = []
+#     path = "eval/real"
+#     G_real = read(f"{path}/{dataset}.pickle")
+#     sens_attr = read(f"{path}/{dataset}_sa.pickle")
+#     #print("\\parbox[t]{2mm}{\\multirow{8}{*}{\\rotatebox[origin=c]{90}{", dataset, "}}} & Real ")
+#     real.append(eval(G_real, G_real))
+#     for model in MODELS:
+#         path = "eval/gen"
+#         G = read(f"{path}/{dataset}_{model}.pickle")
+#         #print(f"&{PRESENT_NAME[model]}", end="")
+#         dataset_m.append(eval(G, G_real))
+#     metric.append(dataset_m)
+#     print("\\hline")
+
+
+# metric = np.array(metric)
+# real = np.array(real)
+# metric = np.transpose(metric, (1,0,2)) #7,5,6
+# metric = np.abs((metric - real)/real)
+# print(metric.shape)
+
+# metric = np.transpose(metric, (2, 0, 1)) #6,7,5
+# print(metric.shape)
+
+# N = 6
+# #TRIANGLE COUNT IS OUT 1.
+# #max DEGREE IS IN 6.
+# MEASURE = ["Max Degree", "Triangle Count", "Edge Distrib. Entropy", "Gini Coeff.", "Cluster Coeff.", "Assort."]
+# fig = plt.figure(figsize=(16,8))
+# for i in range(6):
+#     ax = fig.add_subplot(230 + (i+1))
+#     ax.set_title(MEASURE[i])
+#     w = 0.10
+#     ind = np.arange(5)
+#     for j in range(metric[i].shape[0]):
+#         ax.bar(ind + j * w, metric[i][j],w, label=PRESENT_NAME[MODELS[j]])
+    
+#     ax.set_xticks(ind+3*w)
+#     ax.set_xticklabels(DATASETS)
+
+# handles, labels = ax.get_legend_handles_labels()
+# fig.legend(handles, labels, loc='outside lower center', ncol=7)
+# plt.savefig(f"performance.pdf")
+
+
+
+# print("\nFAIRNESS\n")
+
+# print("\\begin{tabular}{cccccccc} \n \\hline")
+# print(" & \multicolumn{1}{c}{Method} & \
+#       \multicolumn{1}{c}{Avg Deg} & \
+#       \multicolumn{1}{c}{LCC} & \
+#       \multicolumn{1}{c}{EDE} &\
+#       \multicolumn{1}{c}{PLE} &\
+#       \multicolumn{1}{c}{Gini} &\
+#       \multicolumn{1}{c}{Assort.} \
+#       \\\\ \n \hline")
+
+
+# metric = []
+# import sys
+# for dataset in DATASETS:
+#     dataset_m = []
+#     path = "eval/real"
+#     G_real = read(f"{path}/{dataset}.pickle")
+#     sens_attr = read(f"{path}/{dataset}_sa.pickle")
+#     print("\\parbox[t]{2mm}{\\multirow{7}{*}{\\rotatebox[origin=c]{90}{", dataset, "}}}")
+#     for model in MODELS:
+#         print(f"& {PRESENT_NAME[model]}", end="")
+#         if model in ['', '_focal','_fair', '_fair_focal']:
+#             path = "eval/new"
+#             G = read(f"{path}/{dataset}{model}.pickle")
+#         else:
+#             path = "eval/gen"
+#             G = read(f"{path}/{dataset}_{model}.pickle")
+#         dataset_m.append(eval_fair(G, G_real, sens_attr))
+#     print("\\hline")
+
+#     metric.append(dataset_m)
+# print("\end{tabular}")
+
+# metric = np.array(metric)
+# np.save(open("fair_new.npy", "wb"), metric)
+metric = np.load(open("fair1.npy", "rb"))
+metric =np.transpose(metric, (2,1,0))
+
+MEASURE = ["Avg Degree Diff", "Largest CC Diff.", "EDE Diff.", "Power Law Exp. Diff.", "Gini Diff.", "Assort Diff."]
+
+fig = plt.figure(figsize=(16,8))
+
+for i in range(6):
+    ax = fig.add_subplot(230 + (i+1))
+    ax.set_title(MEASURE[i])
+    if i == 3 or i ==5:
+        ax.set_ylim(top=1)
+    w = 0.10
+    ind = np.arange(5)
+    for j in range(metric[i].shape[0]):
+        ax.bar(ind + j * w, metric[i][j],w, label=PRESENT_NAME[MODELS[j]])
+    
+    ax.set_xticks(ind+3*w)
+    ax.set_xticklabels(DATASETS)
+
+handles, labels = ax.get_legend_handles_labels()
+fig.legend(handles, labels, loc='outside lower center', ncol=7)
+plt.savefig(f"fair_new.pdf")
+
+
+# metric = np.transpose(metric, (2, 1, 0))
+# print(metric.shape)
+
+# N = 6
+# #TRIANGLE COUNT IS OUT 1.
+# #max DEGREE IS IN 6.
+# #
+
+# for i in range(3):
+#     fig = plt.figure()
+#     ax = fig.add_subplot(111)
+#     w = 0.10
+#     ind = np.arange(5)
+#     for j in range(4):
+#         ax.bar(ind + j * w, metric[i][j],w)
+
+#     plt.savefig(f"mmd{i}.pdf")
+#     plt.cla
+
+
+# G_real = read_graph(REAL_GRAPH)
+# for graph in SAGESS:
+#     print(graph)
+#     G = read_graph(graph)
+#     eval(G)
+#     print(IoU(G, G_real),4))
+
+
+#Focal vs not at fixed points
+# SIZE = [50,100, 250, 500, 750, 1000, 1250, 1750, 2000, 2500, 3000]
+
+# TARGET_EDGES = [5278, 27341, 10621, 73230, 65287]
+# LABEL = ["Normal", "Focal Loss"]
+# import os.path
+# TARGET_EDGES = [5278, 27341, 10621, 73230, 65287]
+# for dataset in DATASETS:
+#     for id, model in enumerate(['', '_focal']):
+#         file = f"eval/gen/{dataset}{model}.txt"    
+#         plt.plot(create_graph(file, 10000000,None), label=LABEL[id])
+#     plt.legend()
+#     plt.show()
+#     plt.cla()
+                
+
+
+
+# TARGET_EDGES = [5278, 27341, 10621, 73230, 65287]
+# for dataset in DATASETS:
+#     for model in ['', '_focal','_fair', '_fair_focal']:
+#         file = f"eval/gen/{dataset}{model}.txt"
+#         output = f"eval/new/{dataset}{model}.pickle"
+#         G = create_graph(file, 10000000, output)
+#         print(G.number_of_nodes())
+
 
 # print("\\begin{tabular}{cccc|ccccccc} \n \\hline")
 # print(" & \multicolumn{1}{c}{Method} & \
@@ -233,96 +416,15 @@ metric = []
 #       \multicolumn{1}{c}{IoU}\
 #       \\\\ \n \hline")
 # for dataset in DATASETS:
+#     dataset_m = []
 #     path = "eval/real"
 #     G_real = read(f"{path}/{dataset}.pickle")
 #     sens_attr = read(f"{path}/{dataset}_sa.pickle")
-#     print("\\parbox[t]{2mm}{\\multirow{8}{*}{\\rotatebox[origin=c]{90}{", dataset, "}}} & Real ")
-#     eval(G_real, G_real)
-#     for model in MODELS:
-#         path = "eval/gen"
-#         G = read(f"{path}/{dataset}_{model}.pickle")
-#         print(f"&{PRESENT_NAME[model]}", end="")
-#         eval(G, G_real)
+#     #print("\\parbox[t]{2mm}{\\multirow{8}{*}{\\rotatebox[origin=c]{90}{", dataset, "}}} & Real ")
+#     for model in ['', '_focal','_fair', '_fair_focal']:
+#         path = "eval/new"
+#         G = read(f"{path}/{dataset}{model}.pickle")
+#         #print(f"&{PRESENT_NAME[model]}", end="")
+#         eval_fair(G, G_real, sens_attr)
 #     print("\\hline")
 
-
-# metric = np.array(metric)
-# metric = np.transpose(metric, (2, 1, 0))
-# print(metric.shape)
-
-# N = 6
-# #TRIANGLE COUNT IS OUT 1.
-# #max DEGREE IS IN 6.
-# #
-
-# for i in range(7):
-#     fig = plt.figure()
-#     ax = fig.add_subplot(111)
-#     w = 0.10
-#     ind = np.arange(5)
-#     for j in range(metric[i].shape[0]):
-#         ax.bar(ind + j * w, metric[i][j],w)
-
-#     plt.savefig(f"{i}.pdf")
-#     plt.cla
-
-
-print("\nFAIRNESS\n")
-
-
-# print("\\begin{tabular}{ccccccc} \n \\hline")
-# print(" & \multicolumn{1}{c}{Method} & \
-#       \multicolumn{1}{c}{Max Deg} & \
-#       \multicolumn{1}{c}{TC} & \
-#       \multicolumn{1}{c}{LCC} & \
-#       \multicolumn{1}{c}{EDE} & \
-#       \multicolumn{1}{c}{PLE} & \
-#       \multicolumn{1}{c}{Gini} \
-#       \\\\ \n \hline")
-
-
-metric = []
-
-for dataset in DATASETS:
-    dataset_m = []
-    path = "eval/real"
-    G_real = read(f"{path}/{dataset}.pickle")
-    sens_attr = read(f"{path}/{dataset}_sa.pickle")
-    # print("\\parbox[t]{2mm}{\\multirow{7}{*}{\\rotatebox[origin=c]{90}{", dataset, "}}}")
-    for model in MODELS:
-        print(f"& {model} ")
-        path = "eval/gen"
-        G = read(f"{path}/{dataset}_{model}.pickle")
-        dataset_m.append(eval_fair2(G, G_real, sens_attr))
-    # print("\\hline")
-
-    metric.append(dataset_m)
-print("\end{tabular}")
-
-metric = np.array(metric)
-metric = np.transpose(metric, (2, 1, 0))
-print(metric.shape)
-
-N = 6
-#TRIANGLE COUNT IS OUT 1.
-#max DEGREE IS IN 6.
-#
-
-for i in range(3):
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
-    w = 0.10
-    ind = np.arange(5)
-    for j in range(4):
-        ax.bar(ind + j * w, metric[i][j],w)
-
-    plt.savefig(f"mmd{i}.pdf")
-    plt.cla
-
-
-# G_real = read_graph(REAL_GRAPH)
-# for graph in SAGESS:
-#     print(graph)
-#     G = read_graph(graph)
-#     eval(G)
-#     print(round(IoU(G, G_real),4))
