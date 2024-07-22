@@ -50,21 +50,21 @@ def create_graph(file, num_samples, output):
     return nodes_tot
 
 def eval(G, G_real):
-    degrees = list(dict(G.degree()).values())
-    max_deg = max(degrees)
-    avg_deg = sum(degrees)/len(degrees)
-    triangles = nx.triangles(G)
-    scc = nx.connected_components(G)
-    scc_size = [len(c) for c in scc]
-    degrees_np = np.array(degrees, dtype=float)
-    degrees_np /= 2*G.number_of_edges()
-    degrees_np[degrees_np == 0] = np.finfo(np.float32).eps
-    rel_edge_dist = -np.sum(degrees_np*np.log(degrees_np))/np.log(G.number_of_nodes())
-    plaw = powerlaw.Fit(degrees, xmin=min(degrees), verbose=False)
-    avg_deg_diff = np.abs(np.subtract.outer(degrees, degrees)).mean()
-    gini = avg_deg_diff / (np.mean(degrees)*2)
-    print(f" & {G.number_of_nodes()} & {G.number_of_edges()} & {round(max_deg,4)} & {int(sum(triangles.values())/3)} & {round(rel_edge_dist,4)}  & {round(gini,4)} & {round(clusterCoeff(G),4)} & {round(assortativity(G),4)} & {round(IoU(G, G_real),4)} \\\\")
-    #return [max_deg(G), triangles(G), edge_dist_ent(G), gini(G), clusterCoeff(G), assortativity(G)]
+    # degrees = list(dict(G.degree()).values())
+    # max_deg = max(degrees)
+    # avg_deg = sum(degrees)/len(degrees)
+    # triangles = nx.triangles(G)
+    # scc = nx.connected_components(G)
+    # scc_size = [len(c) for c in scc]
+    # degrees_np = np.array(degrees, dtype=float)
+    # degrees_np /= 2*G.number_of_edges()
+    # degrees_np[degrees_np == 0] = np.finfo(np.float32).eps
+    # rel_edge_dist = -np.sum(degrees_np*np.log(degrees_np))/np.log(G.number_of_nodes())
+    # plaw = powerlaw.Fit(degrees, xmin=min(degrees), verbose=False)
+    # avg_deg_diff = np.abs(np.subtract.outer(degrees, degrees)).mean()
+    # gini = avg_deg_diff / (np.mean(degrees)*2)
+    # print(f" & {G.number_of_nodes()} & {G.number_of_edges()} & {round(max_deg,4)} & {int(sum(triangles.values())/3)} & {round(rel_edge_dist,4)}  & {round(gini,4)} & {round(clusterCoeff(G),4)} & {round(assortativity(G),4)} & {round(IoU(G, G_real),4)} \\\\")
+    return [max_deg(G), triangles(G), edge_dist_ent(G), gini(G), clusterCoeff(G), assortativity(G)]
 
 
 def max_deg(G):
@@ -284,6 +284,42 @@ def IoU(G_gen, G_real):
 # fig.legend(handles, labels, loc='outside lower center', ncol=7)
 # plt.savefig(f"performance.pdf")
 
+# metric = []
+# real = []
+# for dataset in DATASETS:
+#     path = "eval/real"
+#     G_real = read(f"{path}/{dataset}.pickle")
+#     real = eval(G_real, G_real)
+#     for model in MODELS:
+#         path = "eval/gen"
+#         G = read(f"{path}/{dataset}_{model}.pickle")
+#         metric.append(eval(G, G_real))
+#     break
+
+metric = np.load(open("fair2.npy", "rb"))
+print(metric.shape)
+metric =np.transpose(metric, (2,1,0))
+print(metric.shape)
+metric = metric[1]
+
+#TRIANGLE COUNT IS OUT 1.
+#max DEGREE IS IN 6.
+fig = plt.figure(figsize=(16,8))
+for i in range(1):
+    ax = fig.add_subplot(110 + (i+1))
+    ax.set_title("Clusterness Diff")
+    w = 0.10
+    ind = np.arange(5)
+    for j in range(metric.shape[0]):
+        ax.bar(ind + j * w, metric[j],w, label=PRESENT_NAME[MODELS[j]])
+    
+    ax.set_xticks(ind+3*w)
+    ax.set_xticklabels(DATASETS)
+
+handles, labels = ax.get_legend_handles_labels()
+fig.legend(handles, labels, loc='outside lower center', ncol=7)
+plt.savefig(f"CCDiff.pdf")
+
 
 
 # print("\nFAIRNESS\n")
@@ -323,29 +359,29 @@ def IoU(G_gen, G_real):
 
 # metric = np.array(metric)
 # np.save(open("fair_new.npy", "wb"), metric)
-metric = np.load(open("fair1.npy", "rb"))
-metric =np.transpose(metric, (2,1,0))
+# metric = np.load(open("fair1.npy", "rb"))
+# metric =np.transpose(metric, (2,1,0))
 
-MEASURE = ["Avg Degree Diff", "Largest CC Diff.", "EDE Diff.", "Power Law Exp. Diff.", "Gini Diff.", "Assort Diff."]
+# MEASURE = ["Avg Degree Diff", "Largest CC Diff.", "EDE Diff.", "Power Law Exp. Diff.", "Gini Diff.", "Assort Diff."]
 
-fig = plt.figure(figsize=(16,8))
+# fig = plt.figure(figsize=(16,8))
 
-for i in range(6):
-    ax = fig.add_subplot(230 + (i+1))
-    ax.set_title(MEASURE[i])
-    if i == 3 or i ==5:
-        ax.set_ylim(top=1)
-    w = 0.10
-    ind = np.arange(5)
-    for j in range(metric[i].shape[0]):
-        ax.bar(ind + j * w, metric[i][j],w, label=PRESENT_NAME[MODELS[j]])
+# for i in range(6):
+#     ax = fig.add_subplot(230 + (i+1))
+#     ax.set_title(MEASURE[i])
+#     if i == 3 or i ==5:
+#         ax.set_ylim(top=1)
+#     w = 0.10
+#     ind = np.arange(5)
+#     for j in range(metric[i].shape[0]):
+#         ax.bar(ind + j * w, metric[i][j],w, label=PRESENT_NAME[MODELS[j]])
     
-    ax.set_xticks(ind+3*w)
-    ax.set_xticklabels(DATASETS)
+#     ax.set_xticks(ind+3*w)
+#     ax.set_xticklabels(DATASETS)
 
-handles, labels = ax.get_legend_handles_labels()
-fig.legend(handles, labels, loc='outside lower center', ncol=7)
-plt.savefig(f"fair_new.pdf")
+# handles, labels = ax.get_legend_handles_labels()
+# fig.legend(handles, labels, loc='outside lower center', ncol=7)
+# plt.savefig(f"fair_new.pdf")
 
 
 # metric = np.transpose(metric, (2, 1, 0))
