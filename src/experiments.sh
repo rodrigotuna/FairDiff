@@ -6,15 +6,15 @@ python main.py train=train_vm +experiment=cora_focal
 python main.py train=train_vm +experiment=cora_fair_focal
 
 ## FB
-#python main.py train=train_vm dataset=facebook
+python main.py train=train_vm dataset=facebook
 python main.py train=train_vm +experiment=fb_fair
-#python main.py train=train_vm +experiment=fb_focal
+python main.py train=train_vm +experiment=fb_focal
 python main.py train=train_vm +experiment=fb_fair_focal
 
 ## NBA
-#python main.py train=train_vm dataset=nba
+python main.py train=train_vm dataset=nba
 python main.py train=train_vm +experiment=nba_fair
-#python main.py train=train_vm +experiment=nba_focal
+python main.py train=train_vm +experiment=nba_focal
 python main.py train=train_vm +experiment=nba_fair_focal
 
 ##OK97
